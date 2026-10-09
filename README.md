@@ -1,7 +1,7 @@
 <div align="center">
 
 # ⚔️ SHINOBI SENKI 8-bit ⚔️
-### AI Battle Arena — 8 Ninja, 2 Jutsu Unik Tiap Ninja, AI Super Cerdas
+### AI Battle Arena — 12 Ninja, 2 Jutsu Unik Tiap Ninja, AI Super Cerdas
 
 **Semua petarung dikendalikan AI super cerdas — duduk manis dan tonton~**
 
@@ -31,6 +31,10 @@
 | 🌙 **Akira** | Bayangan misterius |
 | 🌸 **Hana** | Bunga mematikan |
 | 🐺 **Jiro** | Serigala buas |
+| 🪨 **Daichi** | Tanah kokoh, tanker |
+| 🌊 **Mizuki** | Air deras, taktis |
+| 🌫️ **Kasumi** | Kabut licik, cepat |
+| 🌅 **Sora** | Langit bebas, seimbang |
 
 Tiap ninja punya **2 jutsu unik** + serangan dasar, guard, dan dash!
 
