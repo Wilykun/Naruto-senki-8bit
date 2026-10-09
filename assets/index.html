@@ -1,197 +1,2398 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>Porimap — Price Calculator</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHINOBI SENKI 8-BIT — AI Battle Arena</title>
 <style>
-  :root{
-    --bg:#FAFAF8; --card:#FFFFFF; --ink:#161816; --muted:#8A918D;
-    --line:#E2E4DE; --accent:#0f6a54; --field:#EDEFEA;
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background:#0b0b18; color:#e8e8f0;
+    font-family:"Courier New", monospace;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height:100vh; padding:12px; user-select:none;
   }
-  .dark{
-    --bg:#0B0D0C; --card:#111413; --ink:#EDEEEC; --muted:#7C857F;
-    --line:#1E2321; --accent:#2BA884; --field:#151918;
+  h1 { font-size:20px; letter-spacing:3px; color:#ffd94d; text-shadow:2px 2px 0 #7a2e00; margin-bottom:4px; }
+  .sub { font-size:12px; color:#8a8aa8; margin-bottom:10px; letter-spacing:1px; }
+  #wrap { position:relative; }
+  canvas {
+    image-rendering:pixelated; image-rendering:crisp-edges;
+    width:min(960px, 96vw); height:auto; aspect-ratio:16/9;
+    border:4px solid #2a2a4a; background:#000;
+    box-shadow:0 0 40px rgba(120,80,255,.25);
+    cursor:pointer;
   }
-  *{box-sizing:border-box;margin:0;padding:0}
-  html{-webkit-text-size-adjust:100%}
-  body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter",system-ui,sans-serif;
-    background:var(--bg);color:var(--ink);min-height:100vh;
-    -webkit-font-smoothing:antialiased;transition:background .3s,color .3s}
-  header{border-bottom:1px solid var(--line)}
-  .bar{max-width:520px;margin:0 auto;padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between}
-  .brand{display:flex;align-items:center;gap:12px;min-width:0}
-  .mark{flex-shrink:0;width:8px;height:8px;border-radius:50%;background:var(--accent)}
-  .brand b{font-size:17px;font-weight:600;letter-spacing:-.02em}
-  .brand small{display:block;font-size:12px;font-weight:400;color:var(--muted);letter-spacing:.02em}
-  #themeBtn{flex-shrink:0;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);
-    background:transparent;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center}
-  #themeBtn:active{transform:scale(.94)}
-  main{max-width:520px;margin:0 auto;padding:32px 24px 56px;display:grid;gap:36px}
-  main > *{min-width:0}
-  .eyebrow{font-size:11px;font-weight:600;letter-spacing:.14em;color:var(--muted);margin-bottom:14px}
-  .field{min-width:0;background:var(--field);border:1px solid var(--line);border-radius:16px;
-    padding:6px 18px;display:flex;align-items:baseline;gap:10px;transition:border-color .2s}
-  .field:focus-within{border-color:var(--accent);background:var(--card)}
-  .field .unit{font-size:13px;color:var(--muted);flex-shrink:0}
-  input{flex:1;min-width:0;max-width:100%;border:none;background:transparent;color:var(--ink);
-    font-size:30px;font-weight:300;letter-spacing:-.02em;padding:12px 0;outline:none;font-variant-numeric:tabular-nums}
-  input::placeholder{color:var(--muted);opacity:.55}
-  input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-  input[type=number]{-moz-appearance:textfield;appearance:textfield}
-  .gap{height:18px}
-  #calcBtn{width:100%;margin-top:26px;padding:17px;border:none;border-radius:16px;background:var(--ink);color:var(--bg);
-    font-size:16px;font-weight:600;letter-spacing:.01em;cursor:pointer;transition:opacity .2s,transform .1s}
-  #calcBtn:active{transform:scale(.985);opacity:.88}
-  #result{display:none;padding-top:30px;margin-top:30px;border-top:1px solid var(--line)}
-  #result.show{display:block;animation:rise .35s cubic-bezier(.2,.7,.3,1)}
-  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-  #priceBig{font-size:clamp(44px,14vw,64px);font-weight:200;letter-spacing:-.04em;
-    font-variant-numeric:tabular-nums;overflow-wrap:anywhere;line-height:1.05}
-  #priceBig small{font-size:.5em;font-weight:300;color:var(--muted)}
-  #breakdown{margin-top:10px;font-size:13.5px;color:var(--muted);line-height:1.6}
-  #formula{margin-top:16px;font-size:12.5px;color:var(--muted);overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
-  .rowBtns{display:flex;gap:0;margin-top:20px;border-top:1px solid var(--line)}
-  .ghost{flex:1;padding:14px 0;border:none;border-bottom:1px solid var(--line);background:transparent;
-    color:var(--ink);font-size:14px;font-weight:500;cursor:pointer}
-  .ghost + .ghost{border-left:1px solid var(--line)}
-  .ghost:active{opacity:.55}
-  .hist-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px}
-  .hist-head h2{font-size:11px;font-weight:600;letter-spacing:.14em;color:var(--muted)}
-  #histCount{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
-  #hist{list-style:none}
-  #hist li{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;
-    padding:13px 2px;border-bottom:1px solid var(--line);font-size:14.5px;min-width:0}
-  #hist li span{color:var(--muted);font-variant-numeric:tabular-nums;min-width:0;overflow-wrap:anywhere}
-  #hist li b{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
-  .empty{color:var(--muted);font-size:14px;padding:16px 2px;border-bottom:1px solid var(--line)}
-  footer{text-align:center;font-size:11.5px;letter-spacing:.08em;color:var(--muted);padding-bottom:8px}
-  #toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);max-width:90vw;text-align:center;
-    background:var(--ink);color:var(--bg);padding:12px 24px;border-radius:99px;font-size:13.5px;font-weight:500;
-    display:none;z-index:50;box-shadow:0 8px 30px rgba(0,0,0,.18)}
+  #hint { margin-top:8px; font-size:11px; color:#6a6a8a; text-align:center; line-height:1.7; }
+  #hint b { color:#ffd94d; }
+  /* mobile: layout ringkas, canvas selebar layar */
+  @media (max-width:640px){
+    body{ padding:4px; justify-content:flex-start; }
+    h1{ font-size:15px; letter-spacing:2px; margin-bottom:2px; }
+    .sub{ font-size:10px; margin-bottom:6px; }
+    canvas{ width:100vw; border-width:2px; }
+    #hint{ font-size:10px; margin-top:6px; line-height:1.5; }
+  }
 </style>
 </head>
 <body>
-<header>
-  <div class="bar">
-    <div class="brand"><div class="mark"></div><div><b>Porimap</b><small>পরিমাপ · measure the price</small></div></div>
-    <button id="themeBtn" title="Toggle theme" aria-label="Toggle theme"></button>
-  </div>
-</header>
-
-<main>
-  <section>
-    <p class="eyebrow">RATE — PER KILOGRAM</p>
-    <div class="field"><span class="unit">৳</span><input id="rate" type="number" min="0" step="any" inputmode="decimal" placeholder="0" /></div>
-    <div class="gap"></div>
-    <p class="eyebrow">WEIGHT — GRAMS</p>
-    <div class="field"><input id="weight" type="number" min="0" step="any" inputmode="decimal" placeholder="0" /><span class="unit">g</span></div>
-    <button id="calcBtn">Calculate</button>
-
-    <div id="result">
-      <p class="eyebrow">TOTAL</p>
-      <p id="priceBig"></p>
-      <p id="breakdown"></p>
-      <p id="formula"></p>
-      <div class="rowBtns">
-        <button class="ghost" id="copyBtn">Copy</button>
-        <button class="ghost" id="clearBtn">Clear</button>
-      </div>
-    </div>
-  </section>
-
-  <section>
-    <div class="hist-head"><h2>RECENT</h2><span id="histCount"></span></div>
-    <ul id="hist"></ul>
-  </section>
-
-  <footer>PORIMAP · WEIGH · PRICE · REPEAT</footer>
-</main>
-
-<div id="toast"></div>
-
+<h1>☽ SHINOBI SENKI 8-BIT ☾</h1>
+<div class="sub">AI BATTLE ARENA — DUEL · TEAM · DEATHMATCH · TOURNAMENT</div>
+<div id="wrap"><canvas id="game" width="480" height="270"></canvas></div>
+<div id="hint">
+  <b>Klik</b> untuk mulai · <b>1/2/3</b> kecepatan · <b>Spasi</b> jeda · <b>L</b> kunci kamera · <b>R</b> rematch · <b>Esc</b> menu<br>
+  Semua petarung dikendalikan AI super cerdas — duduk manis dan tonton ~
+</div>
 <script>
-  const $ = id => document.getElementById(id);
-  const store = {
-    load() { try { return JSON.parse(localStorage.getItem('porimap_v2')) || {}; } catch(e){ return {}; } },
-    save(d) { try { localStorage.setItem('porimap_v2', JSON.stringify(d)); } catch(e){} }
-  };
-  let data = Object.assign({ rate:'', theme:'light', hist:[] }, store.load());
-
-  const SUN = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5 5l1.7 1.7M17.3 17.3L19 19M19 5l-1.7 1.7M6.7 17.3L5 19"/></svg>';
-  const MOON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13.5A8 8 0 0 1 10.5 4 8 8 0 1 0 20 13.5z"/></svg>';
-
-  function applyTheme(){
-    document.documentElement.classList.toggle('dark', data.theme === 'dark');
-    $('themeBtn').innerHTML = data.theme === 'dark' ? MOON : SUN;
+'use strict';
+/* ============================================================
+   SHINOBI SENKI 8-BIT — AI Battle Arena
+   Mode: Duel 1v1 · Team 3v3 (simultan) · Deathmatch FFA
+   AI: spacing, punish, anti-projectile, chakra economy,
+       anti-air, target selection, retreating.
+   Tiap ninja: 2 jurus spesial unik + shuriken + combo.
+   ============================================================ */
+const W = 480, H = 270, GROUND = 222;
+const cv = document.getElementById('game');
+const ctx = cv.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+// dunia lebih lebar dari layar — kamera mengikuti pertarungan
+const WORLD_W = 960;
+let cam = {x:0, tx:0, lock:true}; // lock: auto-lock ke titik aksi (bisa toggle klik pojok / tombol L)
+function actionPoint(){
+  if(!G) return null;
+  const alive = G.fighters.filter(f=>f.alive&&f.onStage);
+  if(!alive.length) return null;
+  if(alive.length<3){
+    let mn=1e9, mx=-1e9;
+    for(const f of alive){ if(f.x<mn)mn=f.x; if(f.x>mx)mx=f.x; }
+    return (mn+mx)/2;
   }
-  $('themeBtn').onclick = () => {
-    data.theme = data.theme === 'dark' ? 'light' : 'dark';
-    store.save(data); applyTheme();
-  };
-  applyTheme();
+  // 3+ fighter: kunci ke pasangan terdekat — di sanalah aksinya!
+  let best=1e9, bx=(alive[0].x+alive[1].x)/2;
+  for(let i=0;i<alive.length;i++) for(let j=i+1;j<alive.length;j++){
+    const d=Math.abs(alive[i].x-alive[j].x);
+    if(d<best){ best=d; bx=(alive[i].x+alive[j].x)/2; }
+  }
+  return bx;
+}
+function updateCamera(){
+  if(!G) return;
+  let targetX=null;
+  if(cam.lock) targetX=actionPoint();
+  else{
+    const alive = G.fighters.filter(f=>f.alive&&f.onStage);
+    if(alive.length){
+      let mn=1e9, mx=-1e9;
+      for(const f of alive){ if(f.x<mn)mn=f.x; if(f.x>mx)mx=f.x; }
+      targetX=(mn+mx)/2;
+    }
+  }
+  if(targetX!==null) cam.tx = clamp(targetX - W/2, 0, WORLD_W-W);
+  cam.x += (cam.tx-cam.x)*0.08;
+  if(Math.abs(cam.tx-cam.x)<0.5) cam.x=cam.tx;
+}
 
-  if (data.rate !== '') $('rate').value = data.rate;
-  $('rate').addEventListener('input', e => { data.rate = e.target.value; store.save(data); });
+const clamp = (v,a,b)=>v<a?a:v>b?b:v;
+const rnd = (a,b)=>a+Math.random()*(b-a);
+const rndi = (a,b)=>Math.floor(rnd(a,b+1));
+const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+function rect(x,y,w,h,c){ ctx.fillStyle=c; ctx.fillRect(x|0,y|0,w|0,h|0); }
 
-  function toast(msg){
-    const t = $('toast'); t.textContent = msg; t.style.display = 'block';
-    clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', 1800);
+// ---------- audio ----------
+let AC=null, muted=false, masterGain=null;
+function audioInit(){
+  if(AC) return;
+  try{
+    AC = new (window.AudioContext||window.webkitAudioContext)();
+    masterGain = AC.createGain(); masterGain.gain.value = 0.35;
+    masterGain.connect(AC.destination);
+  }catch(e){ AC=null; }
+}
+let SFX_PITCH = 1; // voice pitch karakter yang sedang berbunyi (beda tiap ninja!)
+function beep(freq, dur, type='square', vol=1, slide=0){
+  if(!AC || muted) return;
+  const t = AC.currentTime;
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = type; o.frequency.setValueAtTime(Math.max(20, freq*SFX_PITCH), t);
+  if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(20,(freq+slide)*SFX_PITCH), t+dur);
+  g.gain.setValueAtTime(vol, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t+dur);
+  o.connect(g); g.connect(masterGain);
+  o.start(t); o.stop(t+dur+0.02);
+}
+function noiseBurst(dur=0.15, vol=0.8, low=400){
+  if(!AC || muted) return;
+  const t = AC.currentTime, len = Math.floor(AC.sampleRate*dur);
+  const buf = AC.createBuffer(1, len, AC.sampleRate);
+  const d = buf.getChannelData(0);
+  for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*(1-i/len);
+  const src = AC.createBufferSource(); src.buffer=buf;
+  const f = AC.createBiquadFilter(); f.type='lowpass'; f.frequency.value=low;
+  const g = AC.createGain(); g.gain.setValueAtTime(vol,t);
+  g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+  src.connect(f); f.connect(g); g.connect(masterGain); src.start(t);
+}
+const SFX = {
+  hit(){ noiseBurst(0.12,0.9,900); beep(160,0.1,'square',0.7,-80); },
+  block(){ beep(300,0.08,'square',0.4); },
+  whoosh(){ noiseBurst(0.18,0.35,2400); },
+  shuriken(){ beep(1400,0.12,'sawtooth',0.35,-900); },
+  special(){ beep(90,0.5,'sawtooth',0.9,300); noiseBurst(0.4,0.7,500); },
+  upper(){ beep(200,0.25,'sawtooth',0.8,600); noiseBurst(0.2,0.5,1200); },
+  guard(){ beep(500,0.3,'sine',0.6,200); },
+  nova(){ beep(800,0.4,'sine',0.7,-600); noiseBurst(0.3,0.5,2000); },
+  jump(){ beep(300,0.12,'square',0.3,300); },
+  ko(){ beep(400,0.8,'square',0.8,-350); },
+  select(){ SFX_PITCH=1; beep(660,0.07,'square',0.5); setTimeout(()=>beep(880,0.09,'square',0.5),70); },
+  round(){ SFX_PITCH=1; beep(523,0.12,'square',0.6); setTimeout(()=>beep(784,0.2,'square',0.6),120); },
+};
+
+// ---------- stage ----------
+const STAGES=[
+ {name:'Rooftop Malam', sky:['#0a0a20','#1a1440','#2a1a3a'], ground:'#3a2c22', line:'#5a4a3a', mtn:'#141428', mtn2:'#1c1c38', hazard:'bolt'},
+ {name:'Dojo Senja', sky:['#1a0a20','#4a1a3a','#7a3226'], ground:'#4a3a28', line:'#6a5a40', mtn:'#241428', mtn2:'#302038', hazard:'rock'},
+ {name:'Hutan Bulan', sky:['#061418','#0a2a24','#143a30'], ground:'#2a3a24', line:'#4a5a38', mtn:'#0c1c18', mtn2:'#122620', hazard:'vine'},
+];
+let curStage = STAGES[0];
+
+// ---------- komentator ----------
+let commQueue=[], commCur=null;
+function comment(text, dur){
+  commQueue.push({text, t:dur||260});
+  if(commQueue.length>4) commQueue.shift();
+}
+function updateComm(){
+  if(commCur){ if(--commCur.t<=0) commCur=null; }
+  else if(commQueue.length) commCur=commQueue.shift();
+}
+function drawComm(){
+  if(!commCur || (mode!=='fight'&&mode!=='roundend')) return;
+  const w = Math.min(452, commCur.text.length*6+30);
+  rect(W/2-w/2, H-28, w, 20, '#0a0a19');
+  rect(W/2-w/2, H-28, w, 2, '#ffd94d');
+  rect(W/2-w/2, H-10, w, 2, '#2a2a4a');
+  ctx.font='bold 9px monospace'; ctx.textAlign='center'; ctx.fillStyle='#ffe9a8';
+  ctx.fillText('» '+commCur.text, W/2, H-14);
+}
+// nama + bar HP di atas kepala (dalam battle, bukan di pojok)
+function drawFighterTag(f){
+  if(!f.alive || !f.onStage) return;
+  const sc = f.def.scale||1;
+  const y = f.y - 46*sc;
+  const w = 40*sc;
+  ctx.font='bold '+Math.max(7, Math.round(7*sc))+'px monospace';
+  ctx.textAlign='center';
+  const nc = f.teamColor ? f.teamColor : f.def.color;
+  ctx.fillStyle='#000';
+  ctx.fillText(f.def.name, f.x+1, y-7);
+  ctx.fillStyle=nc;
+  ctx.fillText(f.def.name, f.x, y-8);
+  // bar HP
+  rect(f.x-w/2-1, y-5, w+2, 6, '#000');
+  rect(f.x-w/2, y-4, w, 4, '#301010');
+  const hpR = clamp(f.hp/f.maxHp, 0, 1);
+  ctx.fillStyle = hpR>0.5?'#5aff5a':hpR>0.25?'#ffd94d':'#ff5a4d';
+  ctx.fillRect(f.x-w/2, y-4, w*hpR, 4);
+}
+// ---------- kill feed ----------
+let killfeed=[];
+function addKillFeed(killer, victim, color){
+  killfeed.unshift({text:killer+' ⚔ '+victim, color, t:300});
+  if(killfeed.length>5) killfeed.pop();
+}
+function updateKillFeed(){
+  for(let i=killfeed.length-1;i>=0;i--){
+    if(--killfeed[i].t<=0) killfeed.splice(i,1);
+  }
+}
+function drawKillFeed(){
+  if(!G || (mode!=='fight'&&mode!=='roundend')) return;
+  ctx.font='bold 8px monospace'; ctx.textAlign='right';
+  killfeed.forEach((k,i)=>{
+    const y=54+i*14;
+    ctx.globalAlpha=clamp(k.t/60,0,1);
+    const wdt=ctx.measureText(k.text).width+14;
+    rect(W-wdt-8, y-10, wdt, 13, 'rgba(8,8,18,0.8)');
+    ctx.fillStyle=k.color;
+    ctx.fillText(k.text, W-14, y);
+    ctx.globalAlpha=1;
+  });
+}
+// ---------- panel statistik (pojok kiri atas) ----------
+function drawStatsPanel(){
+  if(!G || (mode!=='fight'&&mode!=='roundend')) return;
+  ctx.font='8px monospace';
+  const fs=G.fighters;
+  const pw=134, ph=24+fs.length*11;
+  rect(4, 4, pw, ph, 'rgba(8,8,18,0.82)');
+  rect(4, 4, pw, 2, '#ffd94d'); // aksen emas
+  ctx.textAlign='left'; ctx.fillStyle='#8a8aa8';
+  ctx.fillText('— STATS —', 10, 15);
+  ctx.textAlign='right'; ctx.fillStyle='#5a5a78';
+  ctx.fillText('K', 100, 15); ctx.fillText('DMG', 128, 15);
+  ctx.textAlign='left';
+  fs.forEach((f,i)=>{
+    const y=19+i*11;
+    const col=f.alive?(f.teamColor||f.def.color):'#555566';
+    rect(10, y+1, 6, 6, col); // dot warna karakter/tim
+    ctx.fillStyle=f.alive?'#e8e8f0':'#555566';
+    ctx.fillText(f.def.name, 20, y+8);
+    ctx.textAlign='right'; ctx.fillStyle=f.alive?'#cfcfe8':'#555566';
+    ctx.fillText(''+f.kills, 100, y+8);
+    ctx.fillText(''+Math.round(f.dmgDealt), 128, y+8);
+    ctx.textAlign='left';
+  });
+}
+// ---------- indikator auto-lock kamera (pojok kanan atas, klik untuk toggle) ----------
+function drawCamLock(){
+  if(!G || (mode!=='fight'&&mode!=='roundend')) return;
+  const cx=W-18, cy=18;
+  const col = cam.lock ? '#ffd94d' : '#555566';
+  // simbol target: lingkaran + crosshair (digambar manual, anti-tofu)
+  ctx.strokeStyle=col; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(cx, cy, 7, 0, 6.2832); ctx.stroke();
+  rect(cx-11, cy-1, 4, 2, col); rect(cx+7, cy-1, 4, 2, col);
+  rect(cx-1, cy-11, 2, 4, col); rect(cx-1, cy+7, 2, 4, col);
+  rect(cx-1, cy-1, 3, 3, col);
+  ctx.font='7px monospace'; ctx.textAlign='center'; ctx.fillStyle=col;
+  ctx.fillText(cam.lock?'LOCK':'FREE', cx, cy+18);
+  ctx.textAlign='left';
+}
+const FLAVOR=[
+ 'Kedua ninja saling mengukur kekuatan...',
+ 'Penonton menahan napas!',
+ 'Pertarungan semakin memanas!',
+ 'Siapa yang akan membuat kesalahan pertama?',
+ 'Chakra bergejolak di arena!',
+];
+
+// ---------- stage hazard ----------
+let hazards=[];
+let orbs=[]; // heal orb pickup (batch 4)
+const HAZ_INFO={
+  bolt:{dmg:18, rad:26, warn:'⚡', msg:'Sambaran petir menyambar arena!'},
+  rock:{dmg:15, rad:34, warn:'▼', msg:'Batu besar jatuh dari langit!'},
+  vine:{dmg:8,  rad:34, warn:'❀', msg:'Akar berduri mencengkeram!'},
+};
+function updateHazards(){
+  if(!G || G.phase!=='fight') return;
+  if(--G.hazT<=0){
+    G.hazT = rndi(650, 950);
+    hazards.push({x:rnd(80,WORLD_W-80), type:curStage.hazard, phase:'warn', t:70});
+    beep(220, 0.2, 'square', 0.4, -100); // bunyi peringatan
+  }
+  for(let i=hazards.length-1;i>=0;i--){
+    const h=hazards[i];
+    if(--h.t<=0){
+      if(h.phase==='warn'){
+        h.phase='hit'; h.t=28;
+        applyHazard(h);
+      } else hazards.splice(i,1);
+    }
+  }
+}
+function applyHazard(h){
+  const info=HAZ_INFO[h.type];
+  shake=Math.max(shake,5); SFX.special();
+  for(const f of G.fighters){
+    if(!f.alive||!f.onStage) continue;
+    if(Math.abs(f.x-h.x)<info.rad){
+      f.hurt(info.dmg, Math.sign(f.x-h.x||1)*2, null);
+      if(h.type==='vine') f.slow=150;
+    }
+  }
+  if(h.type==='bolt') spawnParticles(h.x, GROUND-40, 14, ['#fff8a8','#ffd94d','#fff'], 3);
+  else if(h.type==='rock') spawnParticles(h.x, GROUND, 14, ['#8a7a6a','#5a4a3a'], 3);
+  else spawnParticles(h.x, GROUND-10, 12, ['#46b95a','#9ae8a8'], 2);
+  comment(info.msg);
+}
+function drawHazards(){
+  for(const h of hazards){
+    if(h.phase==='warn'){
+      if(Math.floor(h.t/8)%2===0){
+        ctx.font='bold 12px monospace'; ctx.textAlign='center';
+        ctx.fillStyle='#ff5a4d'; ctx.fillText(HAZ_INFO[h.type].warn, h.x, GROUND-46);
+        rect(h.x-12, GROUND-40, 24, 3, '#ff5a4d');
+      }
+    } else {
+      if(h.type==='bolt'){
+        rect(h.x-4, 0, 8, GROUND, '#fff8a8');
+        rect(h.x-2, 0, 4, GROUND, '#ffffff');
+      } else if(h.type==='rock'){
+        const p = 1-h.t/28;
+        rect(h.x-10, GROUND-60+p*44, 20, 16, '#6a5a4a');
+        rect(h.x-7, GROUND-58+p*44, 14, 12, '#8a7a6a');
+      } else {
+        for(let v=0;v<5;v++) rect(h.x-14+v*7, GROUND-24+((v*7)%10), 4, 24, '#46b95a');
+      }
+    }
+  }
+}
+
+// ---------- heal orb (batch 4) ----------
+function spawnOrb(){
+  const x = rnd(70, WORLD_W-70);
+  orbs.push({x, t:rndi(900,1400), ph:rnd(0,6.28)});
+  spawnParticles(x, GROUND-14, 10, ['#7dff9a','#ffffff'], 2);
+}
+function updateOrbs(){
+  for(let i=orbs.length-1;i>=0;i--){
+    const o=orbs[i];
+    o.t--; o.ph+=0.08;
+    if(o.t<=0){ orbs.splice(i,1); continue; }
+    for(const f of G.fighters){
+      if(!f.alive||!f.onStage||!f.onGround) continue;
+      if(Math.abs(f.x-o.x)<14){
+        f.hp = Math.min(f.maxHp, f.hp + Math.ceil(f.maxHp*0.2));
+        spawnFloater(f.x, f.y-52, '+HEAL', '#7dff9a');
+        spawnParticles(f.x, f.y-16, 12, ['#7dff9a','#ffffff'], 2);
+        SFX.guard();
+        comment(f.def.name+' mengambil orb penyembuh!');
+        orbs.splice(i,1);
+        break;
+      }
+    }
+  }
+}
+function drawOrbs(){
+  for(const o of orbs){
+    const bob = Math.sin(o.ph)*3, y = GROUND-14+bob;
+    const blink = o.t<120 ? (Math.floor(o.t/10)%2===0 ? 1 : 0.25) : 1;
+    ctx.globalAlpha = 0.35*blink;
+    rect(o.x-9, y-9, 18, 18, '#7dff9a');
+    ctx.globalAlpha = 1;
+    rect(o.x-4, y-4, 8, 8, '#7dff9a');
+    rect(o.x-2, y-2, 4, 4, '#ffffff');
+    ctx.globalAlpha = 0.9*blink;
+    rect(o.x-1, y-7, 2, 14, '#ffffff');
+    rect(o.x-7, y-1, 14, 2, '#ffffff');
+    ctx.globalAlpha = 1;
+  }
+}
+
+// ---------- kepribadian AI ----------
+const PERSONAS = [
+ {id:'aggressor', name:'AGGRESSOR', tag:'AGR', aggro:0.25, blockMul:0.6, shuMul:0.7, rangeMul:0.8},
+ {id:'zoner', name:'ZONER', tag:'ZON', aggro:-0.15, blockMul:1.0, shuMul:1.9, rangeMul:1.5},
+ {id:'counter', name:'COUNTER', tag:'CNT', aggro:-0.2, blockMul:1.9, shuMul:0.8, rangeMul:1.0},
+ {id:'balanced', name:'BALANCED', tag:'BAL', aggro:0, blockMul:1.0, shuMul:1.0, rangeMul:1.0},
+];
+
+// ---------- karakter: tiap ninja punya 2 jurus unik ----------
+const CHARS = [
+  { id:'hayato', name:'HAYATO', color:'#e0393e', dark:'#7a1a1d',
+    desc:'Seimbang', voice:1.0,
+    hp:100, speed:1.55, power:10, aggression:0.55, range:26, skill:1.0,
+    s1:{ name:'Katon: Fireball', type:'fireball', dmg:22, cost:50,
+         desc:'Bola api besar' },
+    s2:{ name:'Flame Uppercut', type:'uppercut', dmg:16, cost:40,
+         desc:'Sabetan api ke atas' },
+    ult:{ name:'INFERNO BLAST', type:'inferno', dmg:45,
+         desc:'Ledakan api raksasa' } },
+  { id:'kaze', name:'KAZE', color:'#3e8fe0', dark:'#1a4a7a',
+    desc:'Cepat', voice:1.18,
+    hp:85, speed:2.1, power:7, aggression:0.7, range:22, skill:1.1,
+    s1:{ name:'Shadow Dash', type:'dash', dmg:18, cost:50,
+         desc:'Dash menembus lawan' },
+    s2:{ name:'Wind Blades', type:'blades', dmg:18, cost:40,
+         desc:'2 pisau angin' },
+    ult:{ name:'THOUSAND CUTS', type:'cuts', dmg:45,
+         desc:'5 tebasan kilat' } },
+  { id:'takeshi', name:'TAKESHI', color:'#46b95a', dark:'#1d6b2a',
+    desc:'Kuat', voice:0.78,
+    hp:125, speed:1.15, power:15, aggression:0.45, range:28, skill:0.9,
+    s1:{ name:'Ground Slam', type:'slam', dmg:28, cost:50,
+         desc:'Guncangan tanah AoE' },
+    s2:{ name:'Iron Guard', type:'guard', dmg:0, cost:35,
+         desc:'Perisai 4 detik' },
+    ult:{ name:'MOUNTAIN CRUSHER', type:'crusher', dmg:50,
+         desc:'Gempa seluruh arena' } },
+  { id:'yuki', name:'YUKI', color:'#b46ae0', dark:'#5a2a7a',
+    desc:'Jarak jauh', voice:1.28,
+    hp:90, speed:1.4, power:8, aggression:0.6, range:70, skill:1.05,
+    s1:{ name:'Shuriken Storm', type:'storm', dmg:20, cost:50,
+         desc:'Hujan 5 shuriken' },
+    s2:{ name:'Frost Nova', type:'nova', dmg:18, cost:45,
+         desc:'Ledakan es + slow' },
+    ult:{ name:'ABSOLUTE ZERO', type:'zero', dmg:40,
+         desc:'Bekukan seluruh arena' } },
+  { id:'riku', name:'RIKU', color:'#ffd94d', dark:'#7a5a10',
+    desc:'Super cepat', voice:1.38,
+    hp:80, speed:2.3, power:7, aggression:0.72, range:22, skill:1.1,
+    s1:{ name:'Volt Rush', type:'dash', dmg:16, cost:50,
+         desc:'Dash petir menembus' },
+    s2:{ name:'Spark Upper', type:'uppercut', dmg:15, cost:40,
+         desc:'Uppercut listrik' },
+    ult:{ name:'-', type:'inferno', dmg:0, desc:'-' } },
+  { id:'akira', name:'AKIRA', color:'#7a6ae0', dark:'#2a2a6a',
+    desc:'Bayangan', voice:0.88,
+    hp:95, speed:1.7, power:9, aggression:0.6, range:30, skill:1.0,
+    s1:{ name:'Shadow Orb', type:'fireball', dmg:20, cost:50,
+         desc:'Bola bayangan' },
+    s2:{ name:'Night Blades', type:'blades', dmg:17, cost:40,
+         desc:'2 pisau malam' },
+    ult:{ name:'-', type:'inferno', dmg:0, desc:'-' } },
+  { id:'hana', name:'HANA', color:'#e06aa8', dark:'#6a1a40',
+    desc:'Penjaga bunga', voice:1.48,
+    hp:90, speed:1.5, power:8, aggression:0.55, range:60, skill:1.05,
+    s1:{ name:'Petal Storm', type:'storm', dmg:18, cost:50,
+         desc:'Hujan 5 kelopak' },
+    s2:{ name:'Bloom Guard', type:'guard', dmg:0, cost:35,
+         desc:'Perisai bunga 4 detik' },
+    ult:{ name:'-', type:'inferno', dmg:0, desc:'-' } },
+  { id:'jiro', name:'JIRO', color:'#3ec8e0', dark:'#0a4a5a',
+    desc:'Tsunami', voice:0.95,
+    hp:115, speed:1.3, power:12, aggression:0.5, range:26, skill:0.95,
+    s1:{ name:'Tide Slam', type:'slam', dmg:26, cost:50,
+         desc:'Hantaman ombak AoE' },
+    s2:{ name:'Frost Tide', type:'nova', dmg:17, cost:45,
+         desc:'Ledakan air + slow' },
+    ult:{ name:'-', type:'inferno', dmg:0, desc:'-' } },
+];
+
+// ---------- BOSS ----------
+const BOSS_DEF = {
+  id:'raijin', name:'RAIJIN', color:'#ff3a5a', dark:'#7a1020',
+  hp:650, speed:1.25, power:22, aggression:0.75, range:30, skill:1.0, scale:1.7,
+  s1:{ name:'Thunder Slam', type:'slam', dmg:32, cost:40, radius:110, desc:'Slam raksasa' },
+  s2:{ name:'Storm Call', type:'storm', dmg:30, cost:40, desc:'Badai shuriken' },
+  ult:{ name:'WRATH OF HEAVEN', type:'crusher', dmg:60, desc:'Murka langit' },
+};
+
+// ---------- sprite ninja prosedural ----------
+function drawFighter(f){
+  const c = f.def.color, dark = f.def.dark;
+  const x = Math.round(f.x), y = Math.round(f.y);
+  const dir = f.facing;
+  const flash = f.state==='hurt' && (f.stateT%6<3);
+  const slowed = f.slow>0;
+  const skin = flash ? '#ffffff' : (slowed ? '#cfe8ff' : '#f2c89b');
+  const cloth = flash ? '#ffffff' : (slowed ? '#3a4a5e' : '#23232e');
+  const accent = flash ? '#ffffff' : c;
+  const darkC = flash ? '#ffffff' : dark;
+
+  ctx.save();
+  ctx.translate(x, y);
+  const P = f.pose;
+  const bsc = f.def.scale||1;
+  ctx.scale(dir*bsc, bsc);
+  if(P==='crouch') ctx.translate(0, 4); // jongkok
+
+  const PT = f.stateT;
+  const bob = (P==='idle') ? (PT%40<20?0:-1) : 0;
+  const wStep = (P==='walk') ? (PT%16<8?1:-1) : 0;
+
+  // penanda tim (mode team)
+  if(f.teamColor){
+    rect(-2,-32+bob,4,4,f.teamColor);
+    rect(-1,-31+bob,2,2,'#ffffff');
+  }
+  // perisai Iron Guard
+  if(f.guard>0){
+    const gl = (PT%10<5);
+    ctx.strokeStyle = gl ? '#9ad8ff' : '#4a8ac8';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(-9, -28+bob, 18, 30);
   }
 
-  function renderHist(){
-    const ul = $('hist'); ul.innerHTML = '';
-    $('histCount').textContent = data.hist.length ? data.hist.length + ' entries' : '';
-    if (!data.hist.length) { ul.innerHTML = '<li class="empty">Nothing calculated yet</li>'; return; }
-    data.hist.forEach(h => {
-      const li = document.createElement('li');
-      li.innerHTML = `<span>${h.weight} g · ৳${h.rate} / kg</span><b>৳${h.total}</b>`;
-      ul.appendChild(li);
+  if(P==='ko'){
+    rect(-11, -5, 22, 5, cloth);
+    rect(-14, -6, 5, 6, skin);
+    rect(-15, -7, 7, 2, darkC);
+    rect(6, -5, 5, 5, accent);
+    ctx.restore(); return;
+  }
+
+  if(P==='kick'){
+    rect(-3, -8, 3, 8, cloth);
+    rect(2, -6, 9, 3, darkC);
+  } else if(P==='dash'){
+    rect(-7, -6, 5, 6, cloth);            // kaki belakang
+    rect(3, -6, 6, 6, cloth);             // kaki depan
+  } else if(P==='walk'){
+    rect(-4, -8, 3, 8 + wStep, cloth);
+    rect(1, -8, 3, 8 - wStep, cloth);
+  } else if(P==='jump'){
+    rect(-4, -7, 3, 5, cloth);
+    rect(1, -6, 4, 4, cloth);
+  } else {
+    rect(-4, -8, 3, 8, cloth);
+    rect(1, -8, 3, 8, cloth);
+  }
+  rect(-4, -16+bob, 8, 9, cloth);
+  rect(-4, -16+bob, 8, 2, accent);
+  rect(-5, -14+bob, 2, 6, darkC);
+  if(P==='punch'){
+    rect(3, -15+bob, 9, 3, skin);
+    rect(10, -15+bob, 3, 3, darkC);
+  } else if(P==='upper'){
+    rect(4, -24+bob, 3, 9, skin);          // tinju ke atas
+    rect(4, -26+bob, 5, 3, '#ff9a2e');
+  } else if(P==='dash'){
+    rect(4, -15+bob, 7, 3, skin);          // lengan ayun
+    rect(-7, -14+bob, 4, 3, skin);
+  } else if(P==='spin'){
+    rect(-10, -15+bob, 6, 3, skin);        // dua tangan horizontal
+    rect(4, -15+bob, 9, 3, skin);
+  } else if(P==='charge'){
+    rect(-9, -14+bob, 6, 3, skin);         // tangan ke belakang (kumpulkan energi)
+    rect(-4, -16+bob, 3, 3, '#ff9a2e');
+  } else if(P==='ultcharge'){
+    rect(-2, -26+bob, 3, 10, skin);        // kedua tangan ke atas
+    rect(3, -26+bob, 3, 10, skin);
+    rect(-3, -28+bob, 9, 3, '#c88cff');
+  } else if(P==='block'){
+    rect(2, -17+bob, 3, 7, skin);
+    rect(5, -17+bob, 3, 7, skin);
+  } else if(P==='special'){
+    rect(3, -16+bob, 7, 3, accent);
+    rect(8, -18+bob, 4, 7, skin);
+  } else {
+    rect(3, -14+bob, 2, 6, skin);
+  }
+  rect(-3, -23+bob, 7, 7, skin);
+  rect(-4, -24+bob, 9, 3, darkC);
+  rect(4, -24+bob, 4, 1, accent);
+  rect(1, -20+bob, 2, 2, '#20202a');
+  rect(-5, -22+bob, 2, 8, '#cfcfcf');
+
+  ctx.restore();
+}
+
+// ---------- background ----------
+const stars = [];
+for(let i=0;i<70;i++) stars.push({x:rnd(0,W), y:rnd(0,150), t:rnd(0,60)});
+let torchT = 0;
+function drawSky(){
+  // cache gradient per stage (optimasi: jangan bikin tiap frame)
+  if(drawSky._st!==curStage || !drawSky._g){
+    const g = ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0,curStage.sky[0]); g.addColorStop(0.7,curStage.sky[1]); g.addColorStop(1,curStage.sky[2]);
+    drawSky._g = g; drawSky._st = curStage;
+  }
+  ctx.fillStyle = drawSky._g; ctx.fillRect(0,0,W,H);
+  for(const s of stars){
+    const tw = menuFx ? (s.t+torchT)%60<30 : true; // mode RINGAN: bintang diam
+    rect(s.x, s.y, 1, 1, tw?'#ffffff':'#8888aa');
+  }
+  ctx.fillStyle = '#f5f0d8'; ctx.beginPath(); ctx.arc(390,52,26,0,7); ctx.fill();
+  rect(384,44,5,5,'#e0d8b8'); rect(396,58,4,4,'#e0d8b8'); rect(388,62,3,3,'#e0d8b8');
+  // gunung jauh dengan parallax mengikuti kamera
+  ctx.fillStyle = curStage.mtn;
+  const off = -(((cam.x*0.3)%480+480)%480);
+  for(let x=off-480; x<W+480; x+=480){
+    ctx.beginPath(); ctx.moveTo(x,GROUND);
+    ctx.lineTo(x+60,150); ctx.lineTo(x+130,GROUND);
+    ctx.lineTo(x+190,130); ctx.lineTo(x+290,GROUND);
+    ctx.lineTo(x+360,160); ctx.lineTo(x+480,GROUND); ctx.fill();
+  }
+}
+function drawWorld(){
+  // ruang dunia: digambar dengan translate(-cam.x)
+  const s = curStage;
+  ctx.fillStyle = s.mtn2;
+  for(let x=-160; x<WORLD_W+160; x+=320){
+    ctx.beginPath(); ctx.moveTo(x,GROUND);
+    ctx.lineTo(x+80,GROUND-46); ctx.lineTo(x+160,GROUND); ctx.fill();
+  }
+  rect(-120, GROUND, WORLD_W+240, H-GROUND, s.ground);
+  rect(-120, GROUND, WORLD_W+240, 3, s.line);
+  for(let x=-120;x<WORLD_W+120;x+=24) rect(x, GROUND+3, 2, H-GROUND-3, '#2c2118');
+  for(let x=-108;x<WORLD_W+120;x+=24) rect(x, GROUND+10, 2, H-GROUND-10, '#2c2118');
+  for(let x=80; x<WORLD_W; x+=160){
+    rect(x-2, GROUND-26, 4, 26, '#4a3524');
+    rect(x-3, GROUND-30, 6, 5, '#2c2118');
+    const fl = menuFx ? Math.sin(torchT*0.3 + x)*2 : 0; // RINGAN: api obor diam
+    rect(x-3, GROUND-38+fl, 6, 9, '#ff9a2e');
+    rect(x-2, GROUND-36+fl, 4, 6, '#ffd94d');
+  }
+  torchT++;
+}
+function drawBackground(){
+  drawSky();
+  const s = curStage;
+  rect(0, GROUND, W, H-GROUND, s.ground);
+  rect(0, GROUND, W, 3, s.line);
+  for(const tx of [26, W-26]){
+    rect(tx-2, GROUND-26, 4, 26, '#4a3524');
+    rect(tx-3, GROUND-30, 6, 5, '#2c2118');
+    const fl = menuFx ? Math.sin(torchT*0.3 + tx)*2 : 0; // RINGAN: api obor diam
+    rect(tx-3, GROUND-38+fl, 6, 9, '#ff9a2e');
+    rect(tx-2, GROUND-36+fl, 4, 6, '#ffd94d');
+  }
+  torchT++;
+}
+
+// ---------- FX ----------
+let projectiles = [], particles = [], floaters = [], ghosts = [];
+let shake = 0, hitstop = 0;
+function spawnParticles(x,y,n,colors,spd=2){
+  if(!menuFx) return; // mode RINGAN: tanpa percikan
+  for(let i=0;i<n;i++)
+    particles.push({x,y,vx:rnd(-spd,spd),vy:rnd(-spd,spd-1),t:rndi(15,35),c:pick(colors)});
+}
+function spawnFloater(x,y,text,c='#ffd94d'){ floaters.push({x,y,text,c,t:50}); }
+function updateFx(){
+  if(!menuFx){ // mode RINGAN: buang semua partikel & afterimage
+    if(particles.length) particles.length=0;
+    if(ghosts.length) ghosts.length=0;
+  }
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i]; p.x+=p.vx; p.y+=p.vy; p.vy+=0.15;
+    if(--p.t<=0) particles.splice(i,1);
+  }
+  for(let i=floaters.length-1;i>=0;i--){
+    const f=floaters[i]; f.y-=0.6;
+    if(--f.t<=0) floaters.splice(i,1);
+  }
+  for(let i=ghosts.length-1;i>=0;i--){
+    if(--ghosts[i].t<=0) ghosts.splice(i,1);
+  }
+  if(shake>0) shake*=0.85;
+}
+function drawFx(){
+  if(menuFx){ // mode RINGAN: tanpa afterimage & percikan (floater teks tetap)
+  for(const gh of ghosts){
+    ctx.globalAlpha = Math.max(0, gh.t/14)*0.35;
+    rect(gh.x-4, gh.y-16, 8, 9, gh.color);
+    rect(gh.x-3, gh.y-23, 7, 7, gh.color);
+    ctx.globalAlpha = 1;
+  }
+  for(const p of particles) rect(p.x,p.y,2,2,p.c);
+  }
+  ctx.font='bold 8px monospace'; ctx.textAlign='center';
+  for(const f of floaters){
+    ctx.fillStyle='#000'; ctx.fillText(f.text,f.x+1,f.y+1);
+    ctx.fillStyle=f.c; ctx.fillText(f.text,f.x,f.y);
+  }
+}
+function updateProjectiles(all){
+  for(let i=projectiles.length-1;i>=0;i--){
+    const p = projectiles[i];
+    p.x += p.vx; p.y += (p.vy||0); if(p.vy) p.vy += 0.02; p.t--;
+    if(p.kind==='fireball' && Math.random()<0.6)
+      particles.push({x:p.x,y:p.y,vx:rnd(-1,1),vy:rnd(-1,1),t:12,c:pick(['#ff7a2e','#ffd94d'])});
+    let dead = p.t<=0 || p.x<-20 || p.x>WORLD_W+20;
+    if(!dead){
+      for(const foe of all){
+        if(foe===p.from || !foe.onStage || foe.state==='ko') continue;
+        if(foe.team===p.from.team) continue;      // no friendly fire
+        const fsc = foe.def.scale||1;
+        if(Math.abs(foe.x-p.x)<12*fsc && Math.abs(foe.y-14*fsc-p.y)<18*fsc){
+          foe.hurt(p.dmg, Math.sign(p.vx)*2, p.from);
+          spawnParticles(p.x,p.y,8,[p.color,'#fff'],2.5);
+          dead=true; break;
+        }
+      }
+    }
+    if(dead) projectiles.splice(i,1);
+  }
+}
+function drawProjectiles(){
+  for(const p of projectiles){
+    if(p.kind==='fireball'){
+      rect(p.x-5,p.y-4,10,8,'#ff7a2e'); rect(p.x-3,p.y-3,6,6,'#ffd94d'); rect(p.x-1,p.y-2,3,4,'#fff');
+    } else if(p.kind==='blade'){
+      rect(p.x-4,p.y-2,8,4,'#bfe8ff'); rect(p.x-2,p.y-4,4,8,'#ffffff');
+    } else {
+      const s = Math.floor(p.t/3)%2;
+      rect(p.x-3,p.y-1,6,2,p.color);
+      rect(p.x-1,p.y-3,2,6,s?'#ffffff':p.color);
+    }
+  }
+}
+
+// ---------- Fighter ----------
+let FID = 0;
+class Fighter {
+  constructor(def, x, facing, team, teamColor, charIdx){
+    this.id = FID++;
+    this.def = def; this.charIdx = charIdx;
+    this.team = team; this.teamColor = teamColor || null;
+    this.persona = pick(PERSONAS);
+    this.adapt = {myAtk:0, foeBlocks:0, foeJumps:0, foeProj:0};
+    this._foeWasAir = false; this._lastFoeProj = 0;
+    this.projectilesThrown = 0;
+    this.spree = 0; this.lastKillT = -9999;
+    this.x = x; this.y = GROUND; this.vx = 0; this.vy = 0;
+    this.facing = facing;
+    this.maxHp = def.hp; this.hp = def.hp;
+    this.chakra = 50; this.maxChakra = 100;
+    this.ult = 0; this._warned = false;
+    this.state = 'idle'; this.stateT = 0; this.pose = 'idle';
+    this.skill = clamp(def.skill * rnd(0.9,1.1), 0.7, 1.25);
+    this.aiT = rndi(0,6); this.retargetT = 0; this.target = null;
+    this.input = {};
+    this.cool = { atk:0, shu:0, s1:0, s2:0, dash:0 };
+    this.dodgeT = 0; this.dashDir = 1;
+    this.combo = 0; this.comboT = 0;
+    this.dmgDealt = 0; this.kills = 0;
+    this.blocking = false; this.onStage = true;
+    this.guard = 0; this.slow = 0;
+    this.dashHit = false; this.slamDone = false; this.novaDone = false;
+    this.atkKind = 'punch'; this.curSp = null;
+    this.wins = 0; // team/ffa: dipakai di level tim
+  }
+  get onGround(){ return this.y >= GROUND; }
+  get busy(){ return ['attack','special','hurt','ko','dash','ultimate'].includes(this.state); }
+  get alive(){ return this.state!=='ko'; }
+  reset(x, facing){
+    this.x=x; this.y=GROUND; this.vx=0; this.vy=0; this.facing=facing;
+    this.hp=this.maxHp; this.chakra=50;
+    this.state='idle'; this.stateT=0;
+    this.cool={atk:0,shu:0,s1:0,s2:0,dash:0};
+    this.dodgeT=0;
+    this.combo=0; this.blocking=false;
+    this.guard=0; this.slow=0; this.onStage=true;
+    this.dashHit=false; this.target=null; this.curSp=null;
+    this.adapt={myAtk:0,foeBlocks:0,foeJumps:0,foeProj:0};
+    this._foeWasAir=false; this._lastFoeProj=0;
+    this.projectilesThrown=0; this.spree=0; this.lastKillT=-9999;
+  }
+  hurt(dmg, kx, attacker, unblockable){
+    if(this.state==='ko' || !this.onStage || this.state==='ultimate') return;
+    if(G && G.frame!==undefined) G.lastDmgFrame = G.frame; // lacak damage terakhir (anti-stuck)
+    if(this.dodgeT>0){ // menghindar sempurna!
+      spawnParticles(this.x, this.y-14, 3, ['#ffffff','#bfe8ff'], 1);
+      if(Math.random()<0.25){ spawnFloater(this.x, this.y-32, 'MISS', '#ffffff'); }
+      if(Math.random()<0.12 && G) comment(this.def.name+' menghindari serangan dengan sempurna!');
+      return;
+    }
+    const _vp=SFX_PITCH; SFX_PITCH=this.def.voice||1; // suara khas si korban
+    if(this.guard>0) dmg = Math.ceil(dmg*0.3);
+    if(this.blocking && this.onGround && this.guard<=0 && !unblockable){
+      dmg = Math.ceil(dmg*0.3); SFX.block();
+      spawnParticles(this.x, this.y-14, 4, ['#9ad8ff','#ffffff'], 1.5);
+      this.hp = Math.max(0, this.hp-dmg);
+      if(attacker){ attacker.dmgDealt += dmg; attacker.adapt.foeBlocks++; }
+    } else {
+      this.state='hurt'; this.stateT=0; SFX.hit(); shake=Math.min(6,shake+3);
+      spawnParticles(this.x, this.y-14, 8, ['#ff5a4d','#ffd94d','#ffffff'], 2.5);
+      hitstop = Math.max(hitstop, 4);
+      this.hp = Math.max(0, this.hp-dmg);
+      this.vx = kx;
+      if(attacker){ attacker.dmgDealt += dmg; attacker.ult=Math.min(100,attacker.ult+dmg*0.5); }
+      this.ult=Math.min(100,this.ult+dmg*0.25);
+    }
+    this.combo=0;
+    if(this.hp<=0){
+      this.state='ko'; this.stateT=0; SFX.ko();
+      hitstop = Math.max(hitstop, 12);
+      spawnParticles(this.x, this.y-10, 16, [this.def.color,'#ffffff','#ffd94d'], 3);
+      if(attacker && attacker!==this){
+        attacker.kills++;
+        // pengumuman
+        if(G && G.phase==='fight'){
+          if(!G.firstBlood){ G.firstBlood=true; spawnFloater(W/2, 88, 'FIRST BLOOD!', '#ff5a4d'); SFX.select(); }
+          comment(attacker.def.name+' menghabisi '+this.def.name+'!');
+          addKillFeed(attacker.def.name, this.def.name, attacker.teamColor||attacker.def.color);
+          const dt = G.frame - attacker.lastKillT;
+          attacker.spree = dt<300 ? attacker.spree+1 : 1;
+          attacker.lastKillT = G.frame;
+          if(G.mode==='ffa' && attacker.spree===2){ spawnFloater(attacker.x, attacker.y-52, 'DOUBLE KILL!', '#ffd94d'); SFX.select(); }
+          if(G.mode==='ffa' && attacker.spree>=3){ spawnFloater(attacker.x, attacker.y-52, 'TRIPLE KILL!', '#ff9a2e'); SFX.select(); }
+        }
+      }
+    }
+    SFX_PITCH=_vp; // kembalikan pitch penyerang
+  }
+  startDash(dir, isBack){
+    if(this.busy || this.cool.dash>0 || !this.onGround || !this.alive) return;
+    this.cool.dash = 46;
+    this.state = 'dash'; this.stateT = 0;
+    this.dashDir = dir;
+    if(isBack) this.dodgeT = 10; // backdash = menghindar (i-frame)
+    SFX.whoosh();
+    spawnParticles(this.x, this.y, 5, ['#aaa','#fff'], 1.5);
+  }
+  tryUlt(){
+    return; // ULTIMATE dihapus atas permintaan Wily (2026-10-07) — tidak bisa dipicu lagi
+    if(this.busy || this.ult<100 || !this.alive) return;
+    this.ult=0; this.state='ultimate'; this.stateT=0;
+  }
+  ultUpdate(foes){
+    const S=this.stateT, U=this.def.ult;
+    if(S===1){
+      G.ultFreeze=this;
+      comment(this.def.name+' mengeluarkan ULTIMATE: '+U.name+'!', 300);
+      SFX.special(); beep(60,0.8,'sawtooth',0.9,200);
+      shake=Math.max(shake,4);
+    }
+    if(S<50){
+      // charge sinematik
+      if(S%3===0) particles.push({x:this.x+rnd(-14,14), y:this.y-rnd(0,30), vx:0, vy:-1.2, t:18,
+        c:pick(['#c88cff','#ffffff','#ffd94d'])});
+    } else if(S===50){
+      // DAMAGE sesuai tipe
+      shake=12; SFX.special(); noiseBurst(0.5,0.9,400);
+      if(U.type==='inferno'){
+        for(const foe of foes){
+          if(!foe.alive||!foe.onStage) continue;
+          if(Math.abs(foe.x-this.x)<140){
+            foe.hurt(U.dmg, Math.sign(foe.x-this.x||1)*4, this, true);
+            foe.vy=-5; foe.y-=2;
+          }
+        }
+        for(let i=0;i<30;i++)
+          particles.push({x:this.x+rnd(-70,70), y:this.y-rnd(0,50), vx:rnd(-2,2), vy:rnd(-4,-1), t:rndi(20,40),
+            c:pick(['#ff7a2e','#ffd94d','#ff3a2e','#ffffff'])});
+        spawnFloater(this.x, this.y-60, U.name, '#ff7a2e');
+      } else if(U.type==='cuts'){
+        const targets=foes.filter(f=>f.alive&&f.onStage&&Math.abs(f.x-this.x)<230);
+        for(const foe of targets){
+          for(let k=0;k<5;k++){
+            ghosts.push({x:foe.x+rnd(-16,16), y:foe.y-rnd(4,24), color:this.def.color, t:16});
+            foe.hurt(Math.ceil(U.dmg/5), (k%2?1:-1)*2, this, true);
+          }
+          spawnParticles(foe.x, foe.y-14, 12, ['#bfe8ff','#ffffff'], 3);
+        }
+        this.x = targets.length? targets[0].x - this.facing*30 : this.x;
+        spawnFloater(this.x, this.y-60, U.name, '#bfe8ff');
+      } else if(U.type==='crusher'){
+        for(const foe of foes){
+          if(!foe.alive||!foe.onStage) continue;
+          if(foe.onGround && Math.abs(foe.x-this.x)<240) foe.hurt(U.dmg, Math.sign(foe.x-this.x||1)*5, this, true);
+        }
+        for(let i=0;i<24;i++)
+          particles.push({x:rnd(0,W), y:GROUND-rnd(0,10), vx:rnd(-3,3), vy:rnd(-6,-2), t:rndi(25,45),
+            c:pick(['#8a7a6a','#5a4a3a','#ffb14d'])});
+        spawnFloater(this.x, this.y-60, U.name, '#ffb14d');
+      } else if(U.type==='zero'){
+        for(const foe of foes){
+          if(!foe.alive||!foe.onStage) continue;
+          if(Math.abs(foe.x-this.x)>240) continue; // ada batas jarak, tidak kena semua
+          foe.hurt(U.dmg, 0, this, true);
+          foe.slow=320;
+        }
+        for(let i=0;i<26;i++)
+          particles.push({x:rnd(0,W), y:rnd(0,GROUND), vx:rnd(-1,1), vy:rnd(0.5,1.5), t:rndi(30,60),
+            c:pick(['#bfe8ff','#ffffff','#6ad8ff'])});
+        spawnFloater(this.x, this.y-60, U.name, '#bfe8ff');
+      }
+    }
+    if(S>140){ this.state='idle'; this.stateT=0; G.ultFreeze=null; }
+  }
+  tryAttack(){
+    if(this.cool.atk>0 || this.busy) return;
+    this.cool.atk=22; this.state='attack'; this.stateT=0;
+    this.atkKind = Math.random()<0.5?'punch':'kick';
+    SFX.whoosh();
+  }
+  tryShuriken(){
+    if(this.cool.shu>0 || this.busy || this.chakra<12) return;
+    this.cool.shu=38; this.chakra-=12;
+    this.state='attack'; this.stateT=0; this.atkKind='punch';
+    SFX.shuriken(); this.projectilesThrown++;
+    projectiles.push({
+      x:this.x+this.facing*10, y:this.y-16, vx:this.facing*4.2,
+      dmg:8, from:this, kind:'shuriken', t:120, color:this.def.color,
     });
   }
-  renderHist();
-
-  let lastTotal = '';
-  function calculate(){
-    const rate = parseFloat($('rate').value);
-    const weight = parseFloat($('weight').value);
-    if (!(rate > 0) || !(weight > 0)) { toast('Enter a valid rate and weight'); return; }
-
-    const total = Math.round((rate / 1000) * weight * 100) / 100;   // per-kg rate → gram weight
-    const taka = Math.floor(total);
-    const poisha = Math.round((total - taka) * 100);                // fraction of 1 taka
-    lastTotal = total.toFixed(2);
-
-    $('priceBig').innerHTML = `৳${taka}.<small>${String(poisha).padStart(2,'0')}</small>`;
-    $('breakdown').textContent = `${taka} taka and ${poisha} poisha — .${String(poisha).padStart(2,'0')} is ${poisha}% of one taka`;
-    $('formula').textContent = `৳${rate} / kg × ${weight} g = ৳${lastTotal}`;
-    const r = $('result');
-    r.classList.remove('show'); void r.offsetWidth; r.classList.add('show');
-
-    data.hist.unshift({ rate, weight, total: lastTotal });
-    data.hist = data.hist.slice(0, 8);
-    store.save(data); renderHist();
+  tryS1(){
+    const sp = this.def.s1;
+    if(this.cool.s1>0 || this.busy || this.chakra<sp.cost) return;
+    this.cool.s1=150; this.chakra-=sp.cost;
+    this.state='special'; this.stateT=0; this.curSp=sp.type;
+    this.fireDone=false; this.stormDone=false; this.slamPhase=0; this.dashHit=false;
+    if(sp.type==='fireball') beep(150,0.35,'sawtooth',0.5,250); // charge
+    else SFX.special();
+    if(sp.type==='dash'){ this.dashHit=true; this.dashDmg=sp.dmg; }
+    else if(sp.type==='slam'){ this.slamDmg=sp.dmg; }
   }
-  $('calcBtn').onclick = calculate;
+  tryS2(){
+    const sp = this.def.s2;
+    if(this.cool.s2>0 || this.busy || this.chakra<sp.cost) return;
+    this.cool.s2=170; this.chakra-=sp.cost;
+    this.state='special'; this.stateT=0; this.curSp=sp.type;
+    this.upperDone=false; this.novaDone=false; this.bladesDone=false;
+    if(sp.type==='uppercut'){
+      SFX.upper(); this.atkKind='upper';
+      this.upperDone=false; this.upperDmg=sp.dmg;
+    } else if(sp.type==='blades'){
+      SFX.shuriken(); this.projectilesThrown++;
+      for(let i=0;i<2;i++)
+        projectiles.push({ x:this.x+this.facing*10, y:this.y-14-i*7, vx:this.facing*4.6,
+          dmg:Math.ceil(sp.dmg/2), from:this, kind:'blade', t:120, color:'#bfe8ff' });
+    } else if(sp.type==='guard'){
+      SFX.guard(); this.guard=240;
+      spawnParticles(this.x, this.y-14, 12, ['#9ad8ff','#ffffff'], 2);
+      spawnFloater(this.x, this.y-36, sp.name.toUpperCase(), '#9ad8ff');
+    } else if(sp.type==='nova'){
+      SFX.nova(); this.novaDone=false; this.novaDmg=sp.dmg;
+      shake=Math.max(shake,6);
+    }
+  }
+  update(foes){
+    SFX_PITCH = this.def.voice||1; // tiap ninja suaranya beda!
+    this.stateT++;
+    for(const k in this.cool) if(this.cool[k]>0) this.cool[k]--;
+    if(this.guard>0) this.guard--;
+    if(this.slow>0) this.slow--;
+    if(this.dodgeT>0) this.dodgeT--;
+    this.chakra = Math.min(this.maxChakra, this.chakra + 0.12);
+    this.ult = Math.min(100, this.ult + 0.03);
+    if(this.comboT>0 && --this.comboT===0) this.combo=0;
 
-  // Enter: rate → weight → calculate
-  $('rate').addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); $('weight').focus(); }
-  });
-  $('weight').addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); calculate(); }
-  });
+    const inp = this.input, slowed = this.slow>0;
+    const spdMul = slowed ? 0.55 : 1;
+    this.blocking = !!inp.block && this.onGround && !this.busy;
+    if(this.state==='dash'){
+      // movement dash: melesat + afterimage
+      this.vx = this.dashDir*4.6;
+      if(this.stateT%3===0) ghosts.push({x:this.x, y:this.y, color:this.def.color, t:14});
+      if(inp.attack && this.stateT>=6){ this.state='idle'; this.stateT=0; this.tryAttack(); }
+      else if(this.stateT>13){ this.state='idle'; this.stateT=0; }
+    }
+    else if(!this.busy && this.alive){
+      if(inp.left){ this.vx = -this.def.speed*spdMul; this.facing=-1; }
+      else if(inp.right){ this.vx = this.def.speed*spdMul; this.facing=1; }
+      else this.vx *= 0.7;
+      if(inp.jump && this.onGround){ this.vy=-8.2; SFX.jump(); spawnParticles(this.x,this.y,4,['#aaa','#fff'],1); }
+      if(inp.attack) this.tryAttack();
+      else if(inp.shuriken) this.tryShuriken();
+      else if(inp.special) this.tryS1();
+      else if(inp.special2) this.tryS2();
+      else if(inp.ult) this.tryUlt();
+      else if(inp.dashF) this.startDash(this.facing, false);
+      else if(inp.dashB) this.startDash(-this.facing, true);
+    }
 
-  $('clearBtn').onclick = () => {
-    $('weight').value = ''; $('result').classList.remove('show');
-  };
-  $('copyBtn').onclick = () => {
-    if (!lastTotal) return;
-    const done = () => toast('Copied ৳' + lastTotal);
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText('৳' + lastTotal).then(done).catch(() => toast('৳' + lastTotal));
-    } else { toast('৳' + lastTotal); }
-  };
+    const t = this.target;
+    const tValid = t && t.alive && t.onStage;
+    // melee aktif frame 10
+    if(this.state==='attack' && this.stateT===10 && tValid){
+      this.adapt.myAtk++;
+      const range = this.atkKind==='kick'?26:20;
+      const hx = this.x + this.facing*range;
+      if(Math.abs(t.x-hx)<14 && Math.abs(t.y-this.y)<26){
+        const dmg = this.def.power + rndi(-2,2);
+        t.hurt(dmg, this.facing*2.2, this);
+        if(++this.combo>=2){
+          this.comboT=70; // jendela kombo diperlebar (batch 4)
+          spawnFloater(t.x, t.y-34, 'HIT x'+this.combo);
+          if(this.combo===5||this.combo===10||this.combo===15||this.combo===20){
+            spawnFloater(t.x, t.y-58, this.combo+' HITS!', '#ff9a2e');
+            SFX.select();
+            comment(this.def.name+' melancarkan kombo '+this.combo+' pukulan!');
+          }
+        }
+      }
+    }
+    // jurus spesial: animasi bertahap per tipe
+    if(this.state==='special') this.specialUpdate(foes);
+    // ultimate sinematik
+    if(this.state==='ultimate') this.ultUpdate(foes);
+
+    // fisika
+    if(!this.onGround || this.vy<0){
+      this.vy += 0.5; this.y += this.vy;
+      if(this.y>=GROUND){
+        this.y=GROUND; this.vy=0;
+        spawnParticles(this.x,this.y,3,['#8a7a6a'],1);
+        if(this.state==='special' && this.curSp==='slam' && this.slamPhase===1) this.slamLand(foes);
+      }
+    }
+    this.x += this.vx;
+    if(this.state!=='dash' && !(this.state==='special' && this.curSp==='dash')) this.vx *= 0.8;
+    this.x = clamp(this.x, 20, WORLD_W-20);
+    // aura chakra penuh
+    if(this.chakra>90 && this.alive && this.onStage && Math.random()<0.25)
+      particles.push({x:this.x+rnd(-6,6), y:this.y-rnd(0,24), vx:0, vy:-0.6, t:16, c:pick(['#6ad8ff','#ffffff'])});
+
+    if(!Number.isFinite(this.x+this.y+this.vx+this.vy)){ this.x=240; this.y=GROUND; this.vx=0; this.vy=0; }
+
+    // pose
+    if(this.state==='ko') this.pose='ko';
+    else if(this.state==='hurt'){ this.pose='hurt'; if(this.stateT>16){this.state='idle';this.stateT=0;} }
+    else if(this.state==='attack'){ this.pose=this.atkKind; if(this.stateT>20){this.state='idle';this.stateT=0;} }
+    else if(this.state==='dash'){ this.pose='dash'; }
+    else if(this.state==='ultimate'){ this.pose='ultcharge'; }
+    else if(this.state==='special'){
+      const S=this.stateT, C=this.curSp;
+      if(C==='fireball') this.pose = S<12?'charge':'special';
+      else if(C==='dash') this.pose = S<6?'crouch':'dash';
+      else if(C==='slam') this.pose = this.slamPhase===1?'jump':'crouch';
+      else if(C==='uppercut') this.pose = S<6?'crouch':'upper';
+      else if(C==='blades') this.pose='spin';
+      else if(C==='guard') this.pose='block';
+      else if(C==='nova') this.pose = S<10?'charge':'special';
+      else this.pose='special';
+    }
+    else if(this.blocking) this.pose='block';
+    else if(!this.onGround) this.pose='jump';
+    else if(Math.abs(this.vx)>0.3) this.pose='walk';
+    else this.pose='idle';
+  }
+  // animasi tiap jurus: charge -> release -> recovery
+  specialUpdate(foes){
+    const t=this.target, tValid=t&&t.alive&&t.onStage;
+    const S=this.stateT;
+    switch(this.curSp){
+      case 'fireball': {
+        if(S<12){
+          if(S%2===0) particles.push({x:this.x+this.facing*rnd(6,14), y:this.y-16+rnd(-4,4),
+            vx:-this.facing*1.2, vy:0, t:10, c:pick(['#ff7a2e','#ffd94d'])});
+        } else if(!this.fireDone){
+          this.fireDone=true; SFX.special(); this.projectilesThrown++;
+          projectiles.push({x:this.x+this.facing*12, y:this.y-16, vx:this.facing*3.2,
+            dmg:this.def.s1.dmg, from:this, kind:'fireball', t:150, color:'#ff7a2e'});
+          spawnParticles(this.x+this.facing*12, this.y-16, 12, ['#ff7a2e','#ffd94d','#fff'], 2.5);
+          shake=Math.max(shake,3);
+        }
+        if(S>26){ this.state='idle'; this.stateT=0; }
+        break;
+      }
+      case 'dash': {
+        if(S<6){ this.vx=0; }
+        else {
+          this.vx=this.facing*7;
+          if(S%2===0) ghosts.push({x:this.x, y:this.y, color:this.def.color, t:14});
+          if(this.dashHit && tValid && Math.abs(t.x-this.x)<16 && Math.abs(t.y-this.y)<26){
+            this.dashHit=false;
+            t.hurt(this.dashDmg, this.facing*4, this);
+            spawnParticles(t.x,t.y-14,10,[this.def.color,'#fff'],3);
+          }
+          if(S>30){ this.state='idle'; this.stateT=0; }
+        }
+        break;
+      }
+      case 'slam': {
+        if(this.slamPhase===0){
+          if(S<10){ this.vx=0; }
+          else { this.slamPhase=1; this.vy=-6.2; this.y-=2; SFX.jump(); }
+        } else if(this.slamPhase===2 && S>this.slamEndT){
+          this.state='idle'; this.stateT=0;
+        }
+        break;
+      }
+      case 'storm': {
+        if(S===4){ this.vy=-4.2; this.vx=-this.facing*2.2; this.y-=1; SFX.jump(); }
+        if(S===10 && !this.stormDone){
+          this.stormDone=true; SFX.shuriken(); this.projectilesThrown++;
+          const sp=this.def.s1;
+          for(let i=0;i<5;i++)
+            projectiles.push({x:this.x+this.facing*10, y:this.y-16, vx:this.facing*(3.2+i*0.3),
+              vy:-1.5+i*0.75, dmg:Math.ceil(sp.dmg/5), from:this, kind:'shuriken', t:130, color:this.def.color});
+        }
+        if(S>28){ this.state='idle'; this.stateT=0; }
+        break;
+      }
+      case 'uppercut': {
+        if(S>=6 && S<=20 && Math.random()<0.5)
+          particles.push({x:this.x+rnd(-4,4), y:this.y-rnd(4,20), vx:0, vy:-1, t:12, c:pick(['#ff9a2e','#ffd94d'])});
+        if(!this.upperDone && S>=8 && tValid){
+          if(Math.abs(t.x-this.x)<30 && Math.abs(t.y-this.y)<30){
+            this.upperDone=true;
+            t.hurt(this.upperDmg, this.facing*1.5, this, true);
+            t.vy=-6.5; t.y-=2;
+            spawnParticles(t.x,t.y-20,10,['#ff9a2e','#ffd94d','#fff'],3);
+            spawnFloater(t.x,t.y-40,this.def.s2.name,'#ff9a2e');
+          }
+        }
+        if(S>24){ this.state='idle'; this.stateT=0; }
+        break;
+      }
+      case 'blades': {
+        if(S<8){ if(S%2===0) spawnParticles(this.x,this.y-14,2,['#bfe8ff'],1); }
+        else if(!this.bladesDone){
+          this.bladesDone=true; SFX.shuriken(); this.projectilesThrown++;
+          const sp=this.def.s2;
+          for(let i=0;i<2;i++)
+            projectiles.push({x:this.x+this.facing*10, y:this.y-14-i*7, vx:this.facing*4.6,
+              dmg:Math.ceil(sp.dmg/2), from:this, kind:'blade', t:120, color:'#bfe8ff'});
+        }
+        if(S>26){ this.state='idle'; this.stateT=0; }
+        break;
+      }
+      case 'guard': {
+        if(S>24){ this.state='idle'; this.stateT=0; }
+        break;
+      }
+      case 'nova': {
+        if(S<10){
+          if(S%2===0){
+            const px=this.x+rnd(-20,20), py=this.y-rnd(0,30);
+            particles.push({x:px, y:py, vx:Math.sign(this.x-px)*1, vy:Math.sign((this.y-14)-py)*1,
+              t:10, c:pick(['#bfe8ff','#ffffff'])});
+          }
+        } else if(!this.novaDone){
+          this.novaDone=true;
+          for(let a=0;a<12;a++)
+            particles.push({x:this.x,y:this.y-14,vx:Math.cos(a/12*6.28)*3,vy:Math.sin(a/12*6.28)*3-1,t:22,c:pick(['#bfe8ff','#ffffff','#6ad8ff'])});
+          for(const foe of foes){
+            if(!foe.alive || !foe.onStage) continue;
+            if(Math.abs(foe.x-this.x)<62 && Math.abs(foe.y-this.y)<50){
+              foe.hurt(this.novaDmg, Math.sign(foe.x-this.x||1)*2, this, true);
+              foe.slow = 200;
+            }
+          }
+          spawnFloater(this.x, this.y-40, this.def.s2.name, '#bfe8ff');
+        }
+        if(S>30){ this.state='idle'; this.stateT=0; }
+        break;
+      }
+    }
+  }
+  slamLand(foes){
+    this.slamPhase=2; this.slamEndT=this.stateT+18;
+    shake=10; SFX.special();
+    spawnParticles(this.x, this.y, 20, ['#ffb14d','#ff7a2e','#fff','#8a7a6a'], 4);
+    spawnFloater(this.x, this.y-40, this.def.s1.name, '#ffb14d');
+    for(const foe of foes){
+      if(!foe.alive || !foe.onStage) continue;
+      if(Math.abs(foe.x-this.x)<(this.def.s1.radius||70) && foe.onGround) foe.hurt(this.slamDmg, Math.sign(foe.x-this.x||1)*3.5, this, true);
+    }
+  }
+  draw(){ if(this.onStage) drawFighter(this); }
+}
+
+// ---------- AI SUPER CERDAS ----------
+// spacing, punish, anti-proyektil, anti-air, ekonomi chakra,
+// pilih target (FFA), mundur saat sekarat.
+Fighter.prototype.chooseTarget = function(foes){
+  if(!foes.length) return null;
+  if(G && G.mode==='ffa' && Math.random()<0.25){
+    // kadang fokus yang paling sekarat
+    let w = foes[0];
+    for(const f of foes) if(f.hp < w.hp) w = f;
+    return w;
+  }
+  let best = foes[0], bd = Math.abs(foes[0].x - this.x);
+  for(const f of foes){
+    const d = Math.abs(f.x - this.x);
+    if(d < bd){ bd = d; best = f; }
+  }
+  return best;
+};
+Fighter.prototype.think = function(foes){
+  this.aiT--;
+  if(this.aiT>0) return;
+  this.aiT = 5;
+  const inp = this.input = {};
+  if(this.busy || !this.alive || !this.onStage) return;
+
+  this.retargetT--;
+  if(!this.target || !this.target.alive || !this.target.onStage || this.retargetT<=0){
+    this.target = this.chooseTarget(foes);
+    this.retargetT = 90;
+  }
+  const t = this.target;
+  if(!t) return;
+  const dx = t.x - this.x, adx = Math.abs(dx), dy = t.y - this.y;
+  const dir = Math.sign(dx) || 1;
+  this.facing = dir;
+  this.blocking = false;
+
+  // --- kepribadian & adaptasi ---
+  const pers = this.persona || PERSONAS[3];
+  const sk = this.skill, r = Math.random();
+  const aggr = clamp(this.def.aggression + pers.aggro, 0.1, 0.95);
+  const s1 = this.def.s1, s2 = this.def.s2;
+  const ad = this.adapt;
+  // lacak pola lawan
+  if(!t.onGround && !this._foeWasAir){ ad.foeJumps++; this._foeWasAir=true; }
+  if(t.onGround) this._foeWasAir=false;
+  const pd = t.projectilesThrown - this._lastFoeProj;
+  if(pd>0){ ad.foeProj += pd; this._lastFoeProj = t.projectilesThrown; }
+  const turtle = ad.foeBlocks / Math.max(1, ad.myAtk); // rasio block lawan
+  const jumper = ad.foeJumps > 4;
+  const spammer = ad.foeProj > 3;
+
+  const inRangeS1 = (s1.type==='fireball' && adx>60 && adx<260) ||
+                    (s1.type==='dash' && adx>40 && adx<220) ||
+                    (s1.type==='slam' && adx<82 && this.onGround) ||
+                    (s1.type==='storm' && adx>50);
+  const inRangeS2 = (s2.type==='uppercut' && adx<30 && this.onGround) ||
+                    (s2.type==='blades' && adx>60 && adx<280) ||
+                    (s2.type==='guard' && adx<130) ||
+                    (s2.type==='nova' && adx<62 && this.onGround);
+
+  // 0. MENGHINDAR: baca startup serangan lawan -> backdash (i-frame)!
+  const foeStartup = (t.state==='attack' && t.stateT<=6) || (t.state==='special' && t.stateT<=10);
+  if(foeStartup && adx<46 && this.onGround && this.cool.dash<=0 && r<0.75*sk){
+    if(this.x<64 || this.x>WORLD_W-64){ inp.jump=true; inp[dir>0?'right':'left']=true; }
+    else inp.dashB=true;
+    return;
+  }
+  // 0a. LOMPAT MUNDUR: baca startup lawan di jarak menengah -> lompat menjauh!
+  if(foeStartup && adx>=46 && adx<120 && this.onGround && r<0.6*sk){
+    inp.jump=true; inp[dir>0?'left':'right']=true; return;
+  }
+  // 0b. TERJEPIT DI POJOK: lompat melewati lawan
+  if(((this.x<58 && dir>0) || (this.x>WORLD_W-58 && dir<0)) && adx<70 && r<0.5*sk){
+    inp.jump=true; inp[dir>0?'right':'left']=true; return;
+  }
+  // 1. ANTI-PROYEKTIL
+  for(const p of projectiles){    if(p.from.team === this.team) continue;
+    const coming = Math.sign(p.vx) === -Math.sign(p.x - this.x);
+    if(coming && Math.abs(p.x-this.x)<70 && Math.abs(p.y-(this.y-14))<24){
+      if(r < 0.8*sk){
+        if(Math.random()<0.55) inp.block = true; else inp.jump = true;
+        return;
+      }
+    }
+  }
+  // 2. PUNISH
+  const tRecover = (t.state==='attack' && t.stateT>14) ||
+                   (t.state==='special' && t.stateT>32) || t.state==='hurt';
+  if(tRecover && adx < 32 && this.onGround && r < 0.85*sk){ inp.attack = true; return; }
+  // 2b. KOMBO: habis mendaratkan pukulan -> kejar lawan yang terpental, sambung serangan!
+  if(this.combo>=1 && this.comboT>0 && this.onGround && adx>30 && adx<240 &&
+     (t.state==='hurt' || this.hp>this.maxHp*0.3) && r<0.85){
+    if(this.cool.dash<=0 && adx>70 && r<0.65*sk){ inp.dashF=true; return; }
+    inp[dir>0?'right':'left']=true;
+    if(adx>120 && r<0.35) inp.jump=true; // lompat kejar kalau terpental jauh
+    return;
+  }
+  // 2c. JUGGLE: lawan terpental ke udara -> lompat kejar, sambung kombo udara!
+  if(!t.onGround && adx<80 && this.onGround && r<0.55*sk){
+    inp.jump=true; inp[dir>0?'right':'left']=true; return;
+  }
+  // 3. ANTI-AIR (lebih agresif kalau lawan tukang lompat)
+  const aaThresh = jumper ? 0.85 : 0.65;
+  if(dy < -34 && adx < 46 && r < aaThresh*sk){
+    if(this.chakra >= s2.cost && s2.type==='uppercut' && adx<30){ inp.special2 = true; return; }
+    if(this.chakra >= s2.cost && s2.type==='nova' && adx<60){ inp.special2 = true; return; }
+    inp.jump = true;
+    if(adx < 30) inp.attack = true;
+    return;
+  }
+  // 3b. KILL CONFIRM: habisi lawan sekarat dengan jurus
+  if(this.chakra >= s1.cost && t.hp <= s1.dmg && inRangeS1){ inp.special = true; return; }
+  if(this.chakra >= s2.cost && t.hp <= s2.dmg && inRangeS2){ inp.special2 = true; return; }
+  // 3c. ANTI-TURTLE: lawan kebanyakan block -> pakai jurus unblockable
+  if(turtle > 0.35 && r < 0.7*sk){
+    if(this.chakra >= s2.cost && s2.type==='uppercut' && adx<32){ inp.special2 = true; return; }
+    if(this.chakra >= s2.cost && s2.type==='nova' && adx<64){ inp.special2 = true; return; }
+    if(this.chakra >= s1.cost && s1.type==='slam' && adx<84){ inp.special = true; return; }
+  }
+  // 3d. ULTIMATE: dihapus atas permintaan Wily (2026-10-07)
+  // 3e. ORB HEAL (batch 4): sekarat & ada orb -> ambil!
+  if(this.hp < this.maxHp*0.6 && orbs.length && this.onGround && r<0.9){
+    let bo=null, bd=1e9;
+    for(const o of orbs){ const d=Math.abs(o.x-this.x); if(d<bd){bd=d;bo=o;} }
+    if(bo && bd<340 && (adx>80 || bd<70)){
+      const odir = bo.x>=this.x?1:-1;
+      inp[odir>0?'right':'left']=true;
+      this.facing = odir;
+      return;
+    }
+  }
+  // 4. JURUS S1: chakra penuh / lawan sekarat + jarak cocok
+  if(this.chakra >= s1.cost && (this.chakra > 88 || t.hp < 35) && inRangeS1){ inp.special = true; return; }
+  // 4b. DASH S1 sebagai gap-closer: lawan jauh -> terjang pakai jurus!
+  if(s1.type==='dash' && this.chakra>=s1.cost && this.cool.s1<=0 && this.onGround && adx>130 && adx<330 && r<0.55*sk*(0.6+pers.aggro)){ inp.special = true; return; }
+  // 5. JURUS S2: situasional
+  if(this.chakra >= s2.cost && inRangeS2 && r < 0.55*sk*pers.shuMul){
+    if(!(s2.type==='guard' && this.hp >= this.maxHp*0.55)){ inp.special2 = true; return; }
+  }
+  // 5b. ANTI-DEMPET: jangan menabrak fighter lain yang bukan target — jaga formasi, biar cerdas!
+  if(this.onGround && typeof G!=='undefined' && G){
+    let blocker=null;
+    for(const o of G.fighters){
+      if(o===this || o===t || !o.alive || !o.onStage || !o.onGround) continue;
+      const odx=o.x-this.x;
+      if(Math.sign(odx)===dir && Math.abs(odx)<26 && Math.abs(o.y-this.y)<34){ blocker=o; break; }
+    }
+    if(blocker){
+      if(r<0.45){ inp.jump=true; inp[dir>0?'right':'left']=true; return; } // lompat melewati kerumunan
+      return; // tahan posisi — jangan numpuk!
+    }
+  }
+  // 6. SPACING
+  const pr = this.def.range * pers.rangeMul;
+  if(adx > pr + 30){
+    if(spammer){
+      // lawan spam proyektil: terobos, jangan adu tembak
+      if(r < 0.4) inp.jump = true;
+      inp[dir>0?'right':'left'] = true; return;
+    }
+    if(pers.id==='aggressor' && adx>110 && adx<260 && this.cool.dash<=0 && this.onGround && r<0.45){
+      inp.dashF=true; return; // dash maju mengejar
+    }
+    // lompat menyerang: kadang lompat ke arah lawan sambil mendekat
+    if(r < 0.18 && adx>110 && adx<240 && this.onGround){
+      inp.jump=true; inp[dir>0?'right':'left']=true; return;
+    }
+    if(this.chakra > 32 && adx < 280 && r < 0.5*sk*pers.shuMul){ inp.shuriken = true; return; }
+    if(r < 0.25 && adx > 150) inp.jump = true;
+    inp[dir>0?'right':'left'] = true; return;
+  }
+  if(adx < pr - 22){
+    if(r < 0.5){ inp[dir>0?'left':'right'] = true; return; }
+  }
+  // zoner: lompat mundur jaga jarak ideal (zona nyaman < 90px)
+  const awayWall = (dir>0 && this.x<70) || (dir<0 && this.x>WORLD_W-70);
+  if(pers.id==='zoner' && adx<90 && !awayWall && r<0.3*sk && this.onGround){
+    inp.jump=true; inp[dir>0?'left':'right']=true; return;
+  }
+  // 7. JARAK SERANG
+  if(adx < 32){
+    if((t.state==='attack' || t.state==='special') && r < 0.5*sk*pers.blockMul){ inp.block = true; return; }
+    if(this.hp < this.maxHp*0.22 && r < 0.55){
+      if(this.cool.dash<=0 && !(this.x<52||this.x>WORLD_W-52) && r<0.5){ inp.dashB=true; return; } // kabur!
+      if(r<0.3 && this.onGround){ inp.jump=true; inp[dir>0?'left':'right']=true; return; } // lompat mundur kabur
+      inp[dir>0?'left':'right'] = true;
+      if(Math.random()<0.5) inp.block = true;
+      return;
+    }
+    if(r < aggr*sk + 0.15){ inp.attack = true; return; }
+    inp.block = true; return;
+  }
+  inp[dir>0?'right':'left'] = true;
+};
+
+// ---------- hall of fame (localStorage) ----------
+function hofGet(){ try{ return JSON.parse(localStorage.getItem('ss8_hof')||'{}'); }catch(e){ return {}; } }
+function hofAdd(charIdx){
+  try{
+    const h = hofGet(); const id = CHARS[charIdx].id;
+    h[id] = (h[id]||0)+1;
+    localStorage.setItem('ss8_hof', JSON.stringify(h));
+  }catch(e){}
+}
+function hofTop(){
+  const h = hofGet(); let best=null, bw=0;
+  for(const c of CHARS){ const w=h[c.id]||0; if(w>bw){bw=w;best=c;} }
+  return best ? {c:best, w:bw} : null;
+}
+function hofRecord(){
+  // catat pemenang ke hall of fame
+  if(!G) return;
+  if(G.tourneyDone && G.tourney.champ!=null) hofAdd(G.tourney.champ);
+  else if(G.mode==='ffa' && G.finalWinner) hofAdd(G.finalWinner.charIdx);
+  else if(G.mode==='team'){
+    const ti = G.finalWinner==='A'?0:1;
+    for(const f of G.teams[ti]) hofAdd(f.charIdx);
+  }
+  else if(G.finalWinner){ hofAdd(G.fighters[G.finalWinner==='A'?0:1].charIdx); }
+}
+let G = null; // {mode, fighters, teams, round, phase, phaseT, timer, frame, winsA, winsB, ffaWins}
+let mode = 'title';
+let draft = null;   // {mode, need, picked:[], label}
+let selMode = 0;
+let speed = 1, paused = false;
+let menuSpeed = 1; // pengaturan kecepatan di menu awal (1/2/4)
+let menuFx = 0; // 0=RINGAN (default, tanpa percikan/animasi), 1=PENUH
+const SPEEDS = [1,2,4];
+const TEAM_COLORS = ['#3e8fe0', '#e0393e'];
+
+function mkFighter(charIdx, team, x, facing){
+  const f = new Fighter(CHARS[charIdx], x, facing, team, team===null?null:TEAM_COLORS[team], charIdx);
+  return f;
+}
+function newMatch(gameMode, picks){
+  // picks: duel [a,b] | team [a1,a2,a3,b1,b2,b3] | ffa [a,b,c,d]
+  FID = 0;
+  speed = menuSpeed; // pakai pengaturan kecepatan dari menu awal
+  projectiles = []; particles = []; floaters = []; ghosts = []; orbs = [];
+  commQueue=[]; commCur=null; killfeed=[];
+  shake = 0; hitstop = 0;
+  G = { mode:gameMode, fighters:[], teams:null, round:1,
+        phase:'intro', phaseT:110, timer:60*60, frame:0,
+        winsA:0, winsB:0, ffaWins:{}, tagQueue:[], finalWinner:null,
+        roundsToWin:2, firstBlood:false, tourney:null, tourneyDone:false,
+        league:null, hazT:700, ultFreeze:null, flavorT:900, boss:null, lastDmgFrame:0, suddenDeath:false,
+        slowmo:0, orbT:600 };
+  if(gameMode==='duel'){
+    G.fighters.push(mkFighter(picks[0], 0, 250, 1));
+    G.fighters.push(mkFighter(picks[1], 1, WORLD_W-250, -1));
+  } else if(gameMode==='team'){
+    // 3v3 SIMULTAN: semua AI main bareng di arena
+    G.teams = [[],[]];
+    const xsA=[120,230,340], xsB=[WORLD_W-120,WORLD_W-230,WORLD_W-340];
+    for(let i=0;i<3;i++){
+      const fa = mkFighter(picks[i], 0, xsA[i], 1);
+      const fb = mkFighter(picks[i+3], 1, xsB[i], -1);
+      G.teams[0].push(fa); G.teams[1].push(fb);
+      G.fighters.push(fa, fb);
+    }
+  } else { // ffa
+    const xs = [100, 360, 600, WORLD_W-100];
+    for(let i=0;i<4;i++)
+      G.fighters.push(mkFighter(picks[i], 10+i, xs[i], i<2?1:-1));
+  }
+  for(const f of G.fighters) f.reset(f.x, f.facing);
+  cam.x=0; cam.tx=0; cam.lock=true;
+  mode = 'fight'; SFX.round();
+}
+function foesOf(f){
+  return G.fighters.filter(o => o!==f && o.alive && o.onStage && o.team!==f.team);
+}
+function activeOf(teamIdx){
+  return G.teams[teamIdx].find(f => f.onStage && f.alive) || null;
+}
+function teamAlive(teamIdx){
+  return G.teams[teamIdx].some(f => f.alive);
+}
+function tagIn(teamIdx){
+  const cur = G.teams[teamIdx].find(f => f.onStage);
+  if(cur) cur.onStage = false;
+  const nxt = G.teams[teamIdx].find(f => f.alive && !f.onStage);
+  if(nxt){
+    nxt.reset(teamIdx===0?110:W-110, teamIdx===0?1:-1);
+    nxt.onStage = true;
+    spawnFloater(nxt.x, 120, nxt.def.name+' MASUK!', TEAM_COLORS[teamIdx]);
+    SFX.select();
+  }
+}
+function endRound(winnerLabel, scoreTeam, wf){
+  // scoreTeam: 0/1 untuk duel & team, id fighter untuk ffa, -1 = seri (tanpa poin)
+  // wf: fighter pemenang (untuk deteksi COMEBACK), boleh null
+  if(G.mode==='ffa'){
+    if(typeof scoreTeam==='number' && scoreTeam>=0)
+      G.ffaWins[scoreTeam] = (G.ffaWins[scoreTeam]||0)+1;
+  } else if(scoreTeam===0) G.winsA++;
+  else if(scoreTeam===1) G.winsB++;
+  if(wf && winnerLabel!=='DRAW!' && wf.hp < wf.maxHp*0.25 && wf.alive!==false){
+    spawnFloater(wf.x, wf.y-48, 'COMEBACK!', '#ffd94d'); SFX.round();
+  }
+  if(winnerLabel!=='DRAW!'){
+    // slow-mo FINISH (batch 4): momen pukulan penentu diperlambat
+    G.slowmo = 78;
+    spawnFloater(W/2, 66, 'FINISH!', '#ffd94d');
+    beep(70,0.7,'sawtooth',0.9,-40);
+    comment(winnerLabel);
+  }
+  G.phase = 'roundend'; G.phaseT = 150; G.winnerLabel = winnerLabel;
+  mode = 'roundend';
+}
+function checkRoundEnd(){
+  if(G.mode==='duel'){
+    const [a,b] = G.fighters;
+    if(!a.alive && !b.alive){ endRound('DRAW!', -1); return; }
+    if(!a.alive) endRound(b.def.name+' MENANG RONDE!', 1, b);
+    else if(!b.alive) endRound(a.def.name+' MENANG RONDE!', 0, a);
+  } else if(G.mode==='team'){
+    // 3v3 simultan: ronde berakhir kalau satu tim habis
+    const aAlive = G.teams[0].some(f=>f.alive);
+    const bAlive = G.teams[1].some(f=>f.alive);
+    if(!aAlive && !bAlive){ endRound('DRAW!', -1); return; }
+    if(!aAlive) endRound('TIM MERAH MENANG RONDE!', 1, G.teams[1].find(f=>f.alive));
+    else if(!bAlive) endRound('TIM BIRU MENANG RONDE!', 0, G.teams[0].find(f=>f.alive));
+  } else if(G.mode==='ffa'){
+    const alive = G.fighters.filter(f=>f.alive);
+    if(alive.length<=1){
+      if(alive.length===1) endRound(alive[0].def.name+' MENANG!', alive[0].id, alive[0]);
+      else { endRound('DRAW!', -1); }
+    }
+  }
+  else if(G.mode==='survival'){
+    const nHero=G.survSquad?3:1;
+    const heroes=G.fighters.slice(0,nHero), foes=G.fighters.slice(nHero);
+    if(heroes.every(h=>!h.alive)){
+      // game over
+      const best=survBestGet(G.survSquad);
+      const lead=heroes[0];
+      if(G.wave>best.best) survBestSet(G.survSquad, G.wave, lead.def.name);
+      comment((G.survSquad?'Squad ':'')+lead.def.name+' gugur di gelombang '+G.wave+'!');
+      G.survOver=true; mode='matchend'; SFX.ko();
+    } else if(foes.every(f=>!f.alive)){
+      G.survKills+=1;
+      comment('Gelombang '+G.wave+' dibersihkan!');
+      G.phase='waveclear'; G.phaseT=130;
+    }
+  } else if(G.mode==='boss'){
+    const heroes=G.fighters.slice(0,3), boss=G.boss;
+    if(!boss.alive){
+      for(const h of heroes) if(h.alive) hofAdd(h.charIdx);
+      comment('RAIJIN tumbang! Para ninja menang!');
+      G.finalWinner='A'; G.bossWin=true; mode='matchend'; SFX.select();
+    } else if(heroes.every(h=>!h.alive)){
+      comment('RAIJIN tak terkalahkan...');
+      G.finalWinner='B'; G.bossWin=false; mode='matchend'; SFX.ko();
+    }
+  }
+}
+function decideTimeout(){
+  if(G.mode==='duel'){
+    const [a,b] = G.fighters;
+    if(a.hp===b.hp){ endRound('DRAW!', -1); }
+    else if(a.hp>b.hp) endRound(a.def.name+' MENANG (WAKTU)!', 0, a);
+    else endRound(b.def.name+' MENANG (WAKTU)!', 1, b);
+  } else if(G.mode==='team'){
+    const hpA = G.teams[0].reduce((s,f)=>s+Math.max(0,f.hp),0);
+    const hpB = G.teams[1].reduce((s,f)=>s+Math.max(0,f.hp),0);
+    if(hpA===hpB){ endRound('DRAW!', -1); }
+    else if(hpA>hpB) endRound('TIM BIRU MENANG (WAKTU)!', 0, G.teams[0].find(f=>f.alive));
+    else endRound('TIM MERAH MENANG (WAKTU)!', 1, G.teams[1].find(f=>f.alive));
+  } else if(G.mode==='ffa'){
+    const alive = G.fighters.filter(f=>f.alive).sort((a,b)=>b.hp-a.hp);
+    if(alive.length) endRound(alive[0].def.name+' MENANG (WAKTU)!', alive[0].id, alive[0]);
+    else endRound('DRAW!', -1);
+  }
+  // survival & boss: timer sangat panjang, failsafe diabaikan
+}
+function matchWinner(){
+  if(G.mode==='ffa'){
+    let best=null, bw=-1;
+    for(const f of G.fighters){
+      const w = G.ffaWins[f.id]||0;
+      if(w>bw){ bw=w; best=f; }
+    }
+    return bw>=2 ? best : null;
+  }
+  if(G.winsA>=G.roundsToWin) return 'A';
+  if(G.winsB>=G.roundsToWin) return 'B';
+  return null;
+}
+function tiebreakWinner(){
+  // failsafe: ronde terlalu banyak seri -> pemenang dari skor
+  if(G.mode==='ffa'){
+    let best=G.fighters[0], bw=-1;
+    for(const f of G.fighters){ const w=G.ffaWins[f.id]||0; if(w>bw){bw=w;best=f;} }
+    return best;
+  }
+  return G.winsA>=G.winsB ? 'A' : 'B';
+}
+function startRound(){
+  projectiles=[]; particles=[]; floaters=[]; ghosts=[]; orbs=[];
+  curStage = pick(STAGES);
+  G.firstBlood = false;
+  G.slowmo = 0; G.orbT = rndi(500,1000);
+  if(G.mode==='duel'){
+    G.fighters[0].reset(250,1); G.fighters[1].reset(WORLD_W-250,-1);
+  } else if(G.mode==='team'){
+    const xsA=[120,230,340], xsB=[WORLD_W-120,WORLD_W-230,WORLD_W-340];
+    for(let ti=0;ti<2;ti++){
+      G.teams[ti].forEach((f,i)=>{
+        f.reset(ti===0?xsA[i]:xsB[i], ti===0?1:-1);
+        f.onStage = true;
+      });
+    }
+  } else {
+    const xs=[100,360,600,WORLD_W-100];
+    G.fighters.forEach((f,i)=>{ f.reset(xs[i%xs.length], i<2?1:-1); f.onStage=true; });
+  }
+  cam.x=0; cam.tx=0; cam.lock=true;
+  G.timer=60*60; G.frame=0; G.phase='intro'; G.phaseT=110;
+  G.flavorT=rndi(700,1100);
+  G.suddenDeath=false; G.lastDmgFrame=0;
+  mode='fight'; SFX.round();
+  if(G.mode==='duel') comment('Ronde '+G.round+': '+G.fighters[0].def.name+' vs '+G.fighters[1].def.name+'!');
+  else if(G.mode==='team') comment('Ronde '+G.round+': Tim Biru vs Tim Merah!');
+  else if(G.mode==='ffa') comment('Ronde '+G.round+': Deathmatch dimulai!');
+}
+function updateFight(){
+  if(paused) return;
+  if(hitstop>0){ hitstop--; return; }
+  if(G.phase==='intro'){ if(--G.phaseT<=0) G.phase='fight'; return; }
+  if(G.phase==='waveclear'){
+    if(--G.phaseT<=0){ spawnWave(); G.phase='fight'; }
+    updateFx();
+    return;
+  }
+  if(G.phase!=='fight') return;
+  G.frame++;
+  if(--G.timer<=0){ decideTimeout(); return; }
+  if(G.frame>5400){ decideTimeout(); return; } // failsafe anti-stall
+  // SUDDEN DEATH: 30 detik tanpa damage -> semua kena damage berkala
+  if(!G.suddenDeath && G.frame-(G.lastDmgFrame||0)>1800){
+    G.suddenDeath=true;
+    comment('SUDDEN DEATH! Arena memanas!', 300);
+    SFX.round(); shake=Math.max(shake,6);
+  }
+  if(G.suddenDeath && G.frame%30===0){
+    for(const f of G.fighters){
+      if(f.alive&&f.onStage) f.hurt(4, 0, null);
+    }
+    spawnFloater(W/2, 100, 'SUDDEN DEATH', '#ff5a4d');
+  }
+  for(let s=0;s<speed;s++){
+    if(G.ultFreeze){
+      // sinematik ultimate: waktu berhenti untuk yang lain
+      const uf=G.ultFreeze;
+      if(uf.alive&&uf.onStage) uf.update(foesOf(uf));
+    } else {
+      for(const f of G.fighters){
+        if(!f.alive || !f.onStage) continue;
+        f.think(foesOf(f));
+      }
+      for(const f of G.fighters){
+        if(!f.alive || !f.onStage) continue;
+        f.update(foesOf(f));
+      }
+      // ANTI-DEMPET (fisika): dorong fighter yang saling menumpuk biar tidak jadi satu titik
+      for(let i=0;i<G.fighters.length;i++){
+        const a=G.fighters[i];
+        if(!a.alive||!a.onStage||!a.onGround) continue;
+        for(let j=i+1;j<G.fighters.length;j++){
+          const b=G.fighters[j];
+          if(!b.alive||!b.onStage||!b.onGround) continue;
+          const dx=b.x-a.x;
+          if(Math.abs(dx)<16 && Math.abs(a.y-b.y)<30){
+            const push=Math.max(2,(16-Math.abs(dx))/2);
+            const s=dx>=0?1:-1;
+            a.x=clamp(a.x-s*push,16,WORLD_W-16);
+            b.x=clamp(b.x+s*push,16,WORLD_W-16);
+          }
+        }
+      }
+    }
+    updateProjectiles(G.fighters);
+    updateHazards();
+    let anyKo = G.fighters.some(f=>f.onStage && !f.alive);
+    if(anyKo) break;
+  }
+  // heal orb (batch 4): duel / team / ffa
+  if(G.mode==='duel'||G.mode==='team'||G.mode==='ffa'){
+    if(--G.orbT<=0 && orbs.length<2){ G.orbT=rndi(700,1300); spawnOrb(); }
+    updateOrbs();
+  }
+  // peringatan HP sekarat + flavor komentator
+  for(const f of G.fighters){
+    if(f.alive && f.onStage && f.hp<f.maxHp*0.2 && !f._warned){
+      f._warned=true;
+      comment(f.def.name+' dalam bahaya!');
+    }
+  }
+  if(--G.flavorT<=0){ G.flavorT=rndi(900,1500); comment(pick(FLAVOR), 200); }
+  updateFx();
+  checkRoundEnd();
+}
+function updateRoundEnd(){
+  updateFx();
+  if(--G.phaseT<=0){
+    let w = matchWinner();
+    if(!w && G.round>=9) w = tiebreakWinner();
+    if(w){
+      if(G.tourney){ advanceTourney(w==='A'?G.fighters[0]:G.fighters[1]); }
+      else if(G.league){
+        recordLeague(w);
+        if(G.league.idx<G.league.matches.length){ mode='lstandings'; SFX.round(); }
+        else {
+          // juara liga
+          let champ=G.league.order[0], bp=-1;
+          for(const ci of G.league.order){ const p=G.league.points[ci]||0; if(p>bp){bp=p;champ=ci;} }
+          hofAdd(champ);
+          G.finalWinner=champ; G.leagueDone=true; mode='matchend'; SFX.select();
+        }
+      }
+      else { G.finalWinner=w; hofRecord(); mode='matchend'; SFX.select(); }
+    }
+    else { G.round++; startRound(); }
+  }
+}
+// ---------- tournament ----------
+function newTourney(picks){
+  const order = picks.slice().sort(()=>Math.random()-0.5);
+  newMatch('duel', [order[0], order[1]]);
+  G.tourney = { order, stage:'sf1', results:[], w1:null, w2:null,
+                curA:order[0], curB:order[1], next:null, champ:null };
+  G.roundsToWin = 1;
+}
+function advanceTourney(winnerF){
+  const T = G.tourney;
+  T.results.push({a:T.curA, b:T.curB, w:winnerF.charIdx});
+  if(T.stage==='sf1'){ T.w1=winnerF.charIdx; T.stage='sf2'; T.next=[T.order[2],T.order[3]]; }
+  else if(T.stage==='sf2'){ T.w2=winnerF.charIdx; T.stage='final'; T.next=[T.w1,T.w2]; }
+  else { T.champ=winnerF.charIdx; T.next=null; }
+  if(T.next){ mode='tbracket'; SFX.round(); }
+  else { G.finalWinner=winnerF; G.tourneyDone=true; hofRecord(); mode='matchend'; SFX.select(); }
+}
+function startTourneyDuel(){
+  const T = G.tourney;
+  const picks = T.next.slice();
+  const saved = {order:T.order, stage:T.stage, results:T.results, w1:T.w1, w2:T.w2};
+  _suspendRecord = true;
+  newMatch('duel', picks);
+  _suspendRecord = false;
+  G.tourney = Object.assign(saved, {curA:picks[0], curB:picks[1], next:null, champ:null});
+  G.roundsToWin = 1;
+}
+function tourneyStageName(){
+  return {sf1:'SEMIFINAL 1', sf2:'SEMIFINAL 2', final:'FINAL'}[G.tourney.stage] || '';
+}
+function drawTBracket(){
+  drawBackground();
+  centerText('🏆 TOURNAMENT BRACKET', 40, 16, '#ffd94d', '#000');
+  const T = G.tourney;
+  ctx.font='bold 10px monospace'; ctx.textAlign='center';
+  const line=(y,txt,c)=>{ ctx.fillStyle=c; ctx.fillText(txt, W/2, y); };
+  T.results.forEach((r,i)=>{
+    const lbl = i<2 ? 'SF'+(i+1) : 'FINAL';
+    line(80+i*22, lbl+': '+CHARS[r.a].name+' vs '+CHARS[r.b].name+' → '+CHARS[r.w].name, '#8a8aa8');
+  });
+  const y0 = 80 + T.results.length*22;
+  if(T.stage==='sf1') line(y0, 'SF1: '+CHARS[T.order[0]].name+' vs '+CHARS[T.order[1]].name+'  ← BERIKUTNYA', '#ffd94d');
+  else if(T.stage==='sf2') line(y0, 'SF2: '+CHARS[T.order[2]].name+' vs '+CHARS[T.order[3]].name+'  ← BERIKUTNYA', '#ffd94d');
+  else line(y0, 'FINAL: '+CHARS[T.w1].name+' vs '+CHARS[T.w2].name+'  ← BERIKUTNYA', '#ffd94d');
+  if(Math.floor(torchT/30)%2===0)
+    centerText('— KLIK / ENTER UNTUK LANJUT —', 220, 11, '#ffffff', '#000');
+}
+// ---------- SURVIVAL ----------
+// ---------- pengaturan survival (sebelum draft) ----------
+let survSetup={enemies:2, squad:false};
+function startSurvSetup(){ survSetup={enemies:2, squad:false}; mode='survsetup'; SFX.select(); }
+function chooseMode(id){ if(id==='survival') startSurvSetup(); else startDraft(id); }
+function survBestGet(squad){ try{ return JSON.parse(localStorage.getItem(squad?'ss8_surv_sq':'ss8_surv')||'{"best":0}'); }catch(e){ return {best:0}; } }
+function survBestSet(squad, wave, charName){
+  try{ localStorage.setItem(squad?'ss8_surv_sq':'ss8_surv', JSON.stringify({best:wave, char:charName})); }catch(e){}
+}
+function drawSurvSetup(){
+  drawBackground();
+  centerText('💀 PENGATURAN SURVIVAL', 32, 13, '#ff5a4d', '#000');
+  ctx.font='bold 10px monospace'; ctx.textAlign='center'; ctx.fillStyle='#ffd94d';
+  ctx.fillText('JUMLAH MUSUH PER GELOMBANG:', W/2, 66);
+  for(let i=0;i<3;i++){
+    const bx=150+i*60, sel=survSetup.enemies===i+1;
+    rect(bx,78,48,28, sel?'#7a2e2e':'#1a1a2e');
+    rect(bx,78,48,3, sel?'#ff5a4d':'#3a3a5a');
+    ctx.font='bold 13px monospace'; ctx.fillStyle=sel?'#fff':'#8a8aa8';
+    ctx.fillText(''+(i+1), bx+24, 98);
+  }
+  ctx.font='bold 10px monospace'; ctx.fillStyle='#ffd94d';
+  ctx.fillText('MODE BERTARUNG:', W/2, 128);
+  const soloSel=!survSetup.squad, sqSel=survSetup.squad;
+  rect(140,140,90,28, soloSel?'#2e5a7a':'#1a1a2e');
+  rect(140,140,90,3, soloSel?'#3e8fe0':'#3a3a5a');
+  rect(250,140,90,28, sqSel?'#2e5a7a':'#1a1a2e');
+  rect(250,140,90,3, sqSel?'#3e8fe0':'#3a3a5a');
+  ctx.font='bold 12px monospace';
+  ctx.fillStyle=soloSel?'#fff':'#8a8aa8'; ctx.fillText('SOLO', 185, 159);
+  ctx.fillStyle=sqSel?'#fff':'#8a8aa8'; ctx.fillText('SQUAD', 295, 159);
+  ctx.font='9px monospace'; ctx.fillStyle='#8a8aa8';
+  ctx.fillText(survSetup.squad?'3 ninja bertarung bersama melawan gelombang!':'1 ninja melawan gelombang musuh tanpa henti!', W/2, 184);
+  const bs=survBestGet(false), bq=survBestGet(true);
+  ctx.fillStyle='#6a6a8a';
+  ctx.fillText('Rekor solo: gel.'+bs.best+'  ·  Rekor squad: gel.'+bq.best, W/2, 202);
+  rect(W/2-70,216,140,32, '#2a6b2a');
+  ctx.font='bold 13px monospace'; ctx.fillStyle='#fff';
+  ctx.fillText('▶ MULAI', W/2, 237);
+  ctx.font='8px monospace'; ctx.fillStyle='#6a6a8a';
+  ctx.fillText('klik pilihan · tombol 1-3 = jumlah musuh · Enter = mulai', W/2, 260);
+}
+function newSurvival(picks, setup){
+  FID=0; projectiles=[]; particles=[]; floaters=[]; ghosts=[]; hazards=[]; orbs=[];
+  commQueue=[]; commCur=null; killfeed=[]; shake=0; hitstop=0;
+  speed = menuSpeed;
+  setup = setup||{enemies:2, squad:false};
+  const squad = picks.length>1;
+  G={ mode:'survival', fighters:[], teams:null, round:1, phase:'intro', phaseT:110,
+      timer:999*60, frame:0, winsA:0, winsB:0, ffaWins:{}, tagQueue:[], finalWinner:null,
+      roundsToWin:1, firstBlood:false, tourney:null, tourneyDone:false,
+      league:null, hazT:800, ultFreeze:null, flavorT:900, boss:null, lastDmgFrame:0, suddenDeath:false,
+      wave:0, survKills:0, survSquad:squad, survEnemies:setup.enemies };
+  for(let i=0;i<picks.length;i++) G.fighters.push(mkFighter(picks[i], 0, 100+i*70, 1));
+  curStage=pick(STAGES);
+  mode='fight'; SFX.round();
+  const names=G.fighters.map(f=>f.def.name).join(', ');
+  comment('SURVIVAL '+(squad?'SQUAD':'')+' dimulai! Seberapa jauh '+names+' bertahan?');
+  spawnWave();
+}
+function spawnWave(){
+  G.wave++;
+  const nHero=G.survSquad?3:1;
+  const heroes=G.fighters.slice(0,nHero);
+  for(const h of heroes){
+    if(h.alive){
+      h.hp=Math.min(h.maxHp, h.hp+Math.round(h.maxHp*0.3));
+      h.chakra=100;
+    }
+    h._warned=false;
+  }
+  G.fighters=G.fighters.slice(0,nHero);
+  const n=Math.min(6, G.survEnemies + Math.floor(G.wave/3) + (G.survSquad?1:0));
+  for(let i=0;i<n;i++){
+    const ci=rndi(0,CHARS.length-1);
+    const e=mkFighter(ci, 1, i%2===0?WORLD_W-90:70+i*50, i%2===0?-1:1);
+    const base=CHARS[ci], hpM=1+G.wave*0.09, pwM=1+G.wave*0.07;
+    e.def=Object.assign({}, base, {
+      hp:Math.round(base.hp*hpM), power:Math.round(base.power*pwM),
+      speed:Math.min(2.4, base.speed*(1+G.wave*0.012)),
+      s1:Object.assign({}, base.s1, {dmg:Math.round(base.s1.dmg*pwM)}),
+      s2:Object.assign({}, base.s2, {dmg:Math.round(base.s2.dmg*pwM)}),
+    });
+    e.maxHp=e.def.hp; e.hp=e.maxHp;
+    e.reset(e.x, e.facing);
+    spawnParticles(e.x, e.y-14, 10, ['#ff5a4d','#7a2e00'], 2);
+    G.fighters.push(e);
+  }
+  G.phase='intro'; G.phaseT=90;
+  G.frame=0; // reset failsafe per gelombang
+  G.suddenDeath=false; G.lastDmgFrame=0;
+  comment('Gelombang '+G.wave+' — '+n+' musuh mendekat!');
+  SFX.round();
+}
+// ---------- BOSS BATTLE ----------
+function newBoss(picks3){
+  FID=0; projectiles=[]; particles=[]; floaters=[]; ghosts=[]; hazards=[]; orbs=[];
+  commQueue=[]; commCur=null; killfeed=[]; shake=0; hitstop=0;
+  speed = menuSpeed;
+  G={ mode:'boss', fighters:[], teams:null, round:1, phase:'intro', phaseT:120,
+      timer:99*60, frame:0, winsA:0, winsB:0, ffaWins:{}, tagQueue:[], finalWinner:null,
+      roundsToWin:1, firstBlood:false, tourney:null, tourneyDone:false,
+      league:null, hazT:800, ultFreeze:null, flavorT:900, boss:null, lastDmgFrame:0, suddenDeath:false };
+  for(let i=0;i<3;i++) G.fighters.push(mkFighter(picks3[i], 0, 100+i*70, 1));
+  const boss=new Fighter(BOSS_DEF, WORLD_W-140, -1, 1, '#ff3a5a', -1);
+  boss.persona=PERSONAS[0];
+  G.fighters.push(boss); G.boss=boss;
+  for(const f of G.fighters) f.reset(f.x, f.facing);
+  curStage=pick(STAGES);
+  cam.x=0; cam.tx=0; cam.lock=true;
+  mode='fight'; SFX.round();
+  comment('RAIJIN sang boss muncul! Kalahkan dia!');
+}
+// ---------- LEAGUE ----------
+function newLeague(picks4){
+  const order=picks4.slice().sort(()=>Math.random()-0.5);
+  newMatch('duel', [order[0], order[1]]);
+  G.league={ order, matches:[[0,1],[2,3],[0,2],[1,3],[0,3],[1,2]], idx:0, points:{}, results:[] };
+  G.roundsToWin=1;
+  comment('LIGA dimulai! Setiap ninja saling berhadapan.');
+}
+function recordLeague(w){
+  const L=G.league;
+  const a=L.order[L.matches[L.idx][0]], b=L.order[L.matches[L.idx][1]];
+  const wIdx = w==='A'?a:b;
+  L.points[wIdx]=(L.points[wIdx]||0)+3;
+  L.results.push({a, b, w:wIdx});
+  L.idx++;
+}
+function startLeagueDuel(){
+  const L=G.league;
+  const m=L.matches[L.idx];
+  const saved={order:L.order, matches:L.matches, idx:L.idx, points:L.points, results:L.results};
+  _suspendRecord=true;
+  newMatch('duel', [L.order[m[0]], L.order[m[1]]]);
+  _suspendRecord=false;
+  G.league=saved; G.roundsToWin=1;
+}
+function drawLStandings(){
+  drawBackground();
+  centerText('🏆 KLASEMEN LIGA', 40, 16, '#ffd94d', '#000');
+  const L=G.league;
+  const rows=L.order.map(ci=>({ci, pts:L.points[ci]||0}))
+    .sort((a,b)=>b.pts-a.pts);
+  ctx.font='bold 11px monospace'; ctx.textAlign='center';
+  rows.forEach((r,i)=>{
+    ctx.fillStyle = i===0?'#ffd94d':'#cfcfe8';
+    ctx.fillText((i+1)+'. '+CHARS[r.ci].name+' — '+r.pts+' pts', W/2, 80+i*20);
+  });
+  ctx.font='9px monospace'; ctx.fillStyle='#8a8aa8';
+  L.results.forEach((res,i)=>{
+    ctx.fillText('M'+(i+1)+': '+CHARS[res.a].name+' vs '+CHARS[res.b].name+' → '+CHARS[res.w].name, W/2, 178+i*13);
+  });
+  if(Math.floor(torchT/30)%2===0)
+    centerText(L.idx<L.matches.length ? '— KLIK / ENTER: MATCH BERIKUTNYA —' : '— KLIK / ENTER: HASIL AKHIR —', 248, 11, '#ffffff', '#000');
+}
+
+// ---------- HUD ----------
+function bar(x,y,w,h,frac,c1,c2){
+  rect(x-1,y-1,w+2,h+2,'#000');
+  rect(x,y,w,h,'#402020');
+  const fw = Math.max(0,w*clamp(frac,0,1));
+  const g = ctx.createLinearGradient(x,y,x,y+h);
+  g.addColorStop(0,c1); g.addColorStop(1,c2);
+  ctx.fillStyle=g; ctx.fillRect(x,y,fw,h);
+}
+function centerText(text, y, size, color, shadow){
+  ctx.font='bold '+size+'px monospace'; ctx.textAlign='center';
+  if(shadow){ ctx.fillStyle=shadow; ctx.fillText(text, W/2+2, y+2); }
+  ctx.fillStyle=color; ctx.fillText(text, W/2, y);
+}
+function drawTimerAndRound(){
+  ctx.textAlign='center'; ctx.fillStyle='#fff';
+  ctx.font='bold 16px monospace';
+  ctx.fillText(Math.ceil(G.timer/60), W/2, 24);
+  ctx.font='9px monospace'; ctx.fillStyle='#8a8aa8';
+  let ml = G.mode==='duel'?'DUEL':G.mode==='team'?'TEAM 3v3':G.mode==='ffa'?'DEATHMATCH':G.mode==='survival'?'SURVIVAL':'BOSS';
+  if(G.tourney && !G.tourneyDone) ml = tourneyStageName();
+  if(G.league && !G.leagueDone) ml = 'LIGA M'+(G.league.idx+1)+'/6';
+  ctx.fillText('ROUND '+G.round+' · '+ml+' · '+speed+'x', W/2, 46);
+}
+function drawPips(cx, y, wins, color){
+  for(let i=0;i<2;i++) rect(cx-11+i*12, y, 10, 5, wins>i?color:'#333344');
+}
+function drawHUD(){
+  // HUD ringkas: bar HP sudah di atas kepala petarung (drawFighterTag).
+  // Di sini hanya: timer tengah, skor/pips, dan info mode.
+  drawTimerAndRound();
+  ctx.textAlign='center';
+  if(G.mode==='duel'){
+    drawPips(W/2-2, 34, G.winsA, '#ffd94d');
+    drawPips(W/2+14, 34, G.winsB, '#ffd94d');
+  } else if(G.mode==='team'){
+    ctx.font='bold 9px monospace';
+    ctx.fillStyle=TEAM_COLORS[0]; ctx.fillText('BIRU '+G.winsA, W/2-24, 60);
+    ctx.fillStyle='#8a8aa8'; ctx.fillText('—', W/2, 60);
+    ctx.fillStyle=TEAM_COLORS[1]; ctx.fillText(G.winsB+' MERAH', W/2+24, 60);
+  } else if(G.mode==='survival'){
+    const foesLeft=G.fighters.slice(1).filter(f=>f.alive).length;
+    ctx.font='bold 13px monospace'; ctx.fillStyle='#ff5a4d';
+    ctx.fillText('WAVE '+G.wave, W/2, 58);
+    ctx.font='8px monospace'; ctx.fillStyle='#8a8aa8';
+    ctx.fillText('musuh: '+foesLeft, W/2, 68);
+  } else if(G.mode==='boss'){
+    const boss=G.boss;
+    ctx.font='bold 10px monospace'; ctx.fillStyle='#ff3a5a';
+    ctx.fillText('RAIJIN', W/2, 58);
+    bar(W/2-110, 62, 220, 8, boss.hp/boss.maxHp, '#ff5a4d','#a01020');
+  }
+}
+
+// ---------- layar ----------
+function drawTitle(){
+  drawBackground();
+  centerText('SHINOBI SENKI', 78, 32, '#ffd94d', '#7a2e00');
+  centerText('AI BATTLE ARENA', 100, 11, '#8a8aa8');
+  const d1={def:CHARS[0],x:150,y:GROUND,facing:1,pose:'idle',stateT:torchT,state:'idle',guard:0,slow:0,teamColor:null};
+  const d2={def:CHARS[2],x:330,y:GROUND,facing:-1,pose:'idle',stateT:torchT+20,state:'idle',guard:0,slow:0,teamColor:null};
+  drawFighter(d1); drawFighter(d2);
+  if(Math.floor(torchT/30)%2===0)
+    centerText('— KLIK / ENTER UNTUK MULAI —', 196, 11, '#ffffff', '#000');
+  centerText('8 ninja · 2 jurus unik tiap ninja · AI super cerdas', 232, 9, '#6a6a8a');
+  const hof = hofTop();
+  if(hof) centerText('👑 HALL OF FAME: '+hof.c.name+' ×'+hof.w, 244, 9, '#ffd94d');
+  const sv = survBestGet(false), sq = survBestGet(true);
+  if(sv.best>0) centerText('💀 SURVIVAL SOLO TERBAIK: GEL. '+sv.best+(sv.char?' ('+sv.char+')':''), 250, 9, '#ff5a4d');
+  if(sq.best>0) centerText('💀 SURVIVAL SQUAD TERBAIK: GEL. '+sq.best+(sq.char?' ('+sq.char+')':''), 262, 9, '#3e8fe0');
+}
+const MODE_DEFS = [
+  { id:'duel', name:'DUEL 1v1', desc:'Satu lawan satu klasik' },
+  { id:'team', name:'TEAM 3v3', desc:'Tim biru vs tim merah, semua main!' },
+  { id:'ffa', name:'DEATHMATCH', desc:'4 ninja, semua lawan semua!' },
+  { id:'tourney', name:'TOURNAMENT', desc:'Bracket gugur 4 ninja!' },
+  { id:'survival', name:'SURVIVAL', desc:'Bertahan dari gelombang musuh!' },
+  { id:'boss', name:'BOSS: RAIJIN', desc:'3 ninja vs boss raksasa!' },
+  { id:'league', name:'LIGA', desc:'Round-robin + klasemen!' },
+];
+function drawModeSelect(){
+  drawBackground();
+  centerText('PILIH MODE', 24, 15, '#ffd94d', '#000');
+  MODE_DEFS.forEach((m,i)=>{
+    const by = 46 + i*30;
+    const hov = selMode===i;
+    rect(W/2-160, by-14, 320, 28, hov?'#2a2a5e':'#141422');
+    rect(W/2-160, by-14, 320, 2, hov?'#ffd94d':'#3a3a5a');
+    ctx.font='bold 11px monospace'; ctx.textAlign='left';
+    ctx.fillStyle = hov?'#ffd94d':'#cfcfe8';
+    ctx.fillText((i+1)+'. '+m.name, W/2-150, by+1);
+    ctx.font='8px monospace'; ctx.fillStyle='#8a8aa8'; ctx.textAlign='right';
+    ctx.fillText(m.desc, W/2+150, by+1);
+  });
+  // baris pengaturan: kecepatan + efek visual
+  ctx.font='bold 10px monospace'; ctx.textAlign='left';
+  ctx.fillStyle='#8a8aa8';
+  ctx.fillText('KECEPATAN:', 14, 257);
+  const spdOpts=[[1,'1x'],[2,'2x'],[4,'4x']];
+  spdOpts.forEach(([v,label],i)=>{
+    const bx=92+i*38, active=menuSpeed===v;
+    rect(bx, 245, 34, 18, active?'#2a2a5e':'#141422');
+    rect(bx, 245, 34, 2, active?'#ffd94d':'#3a3a5a');
+    rect(bx, 261, 34, 2, active?'#ffd94d':'#3a3a5a');
+    ctx.fillStyle=active?'#ffd94d':'#8a8aa8'; ctx.textAlign='center';
+    ctx.fillText(label, bx+17, 258); ctx.textAlign='left';
+  });
+  ctx.fillStyle='#8a8aa8';
+  ctx.fillText('EFEK:', 214, 257);
+  const fxOpts=[[1,'PENUH'],[0,'RINGAN']];
+  fxOpts.forEach(([v,label],i)=>{
+    const bx=258+i*62, active=menuFx===v;
+    rect(bx, 245, 58, 18, active?'#2a2a5e':'#141422');
+    rect(bx, 245, 58, 2, active?'#ffd94d':'#3a3a5a');
+    rect(bx, 261, 58, 2, active?'#ffd94d':'#3a3a5a');
+    ctx.fillStyle=active?'#ffd94d':'#8a8aa8'; ctx.textAlign='center';
+    ctx.fillText(label, bx+29, 258); ctx.textAlign='left';
+  });
+}
+function draftCardXY(i){
+  const row=i<4?0:1, col=i%4;
+  return { bx:52+col*100, by:row?206:108 };
+}
+function drawDraft(){
+  drawBackground();
+  ctx.font='bold 13px monospace'; ctx.textAlign='left'; ctx.fillStyle='#ffd94d';
+  ctx.fillText(draft.label, 14, 28);
+  ctx.font='9px monospace'; ctx.fillStyle='#8a8aa8';
+  ctx.fillText('Terpilih: '+draft.picked.length+'/'+draft.need, 14, 44);
+  const ready = draft.picked.length===draft.need;
+  rect(W-150,10,66,26, ready?'#2a6b2a':'#2a2a3a');
+  ctx.font='bold 10px monospace'; ctx.textAlign='center';
+  ctx.fillStyle=ready?'#fff':'#777788'; ctx.fillText('▶ MULAI', W-117, 28);
+  rect(W-78,10,66,26,'#3a3a5a');
+  ctx.fillStyle='#ffd94d'; ctx.fillText('🎲 ACAK', W-45, 28);
+  for(let i=0;i<CHARS.length;i++){
+    const c=CHARS[i], {bx,by}=draftCardXY(i);
+    const pi = draft.picked.indexOf(i);
+    const chosen = pi>=0;
+    rect(bx-38,by-46,76,92, chosen?'#2a2a5e':'#141422');
+    rect(bx-38,by-46,76,3, chosen?'#ffd94d':c.color);
+    const d={def:c,x:bx,y:by+8,facing:1,pose:'idle',stateT:torchT+i*10,state:'idle',guard:0,slow:0,teamColor:null};
+    drawFighter(d);
+    ctx.font='bold 9px monospace'; ctx.textAlign='center';
+    ctx.fillStyle=c.color; ctx.fillText(c.name, bx, by+28);
+    ctx.font='7px monospace'; ctx.fillStyle='#8a8aa8';
+    ctx.fillText(c.s1.name, bx, by+38);
+    ctx.fillText(c.s2.name, bx, by+46);
+    if(chosen){
+      ctx.fillStyle='#ffd94d';
+      ctx.font='bold 10px monospace';
+      ctx.fillText('✓'+(pi+1), bx+28, by-36);
+    }
+  }
+  ctx.font='8px monospace'; ctx.fillStyle='#6a6a8a'; ctx.textAlign='center';
+  ctx.fillText('klik kartu untuk pilih/hapus · tombol 1-8 juga bisa', W/2, 262);
+}
+function drawMatchEnd(){
+  drawBackground();
+  if(G.mode==='survival'){
+    const nHero=G.survSquad?3:1;
+    const heroes=G.fighters.slice(0,nHero);
+    const hero=heroes[0];
+    const best=survBestGet(G.survSquad);
+    const totKO=heroes.reduce((s,h)=>s+h.kills,0);
+    const totDmg=heroes.reduce((s,h)=>s+h.dmgDealt,0);
+    centerText('💀 GAME OVER', 60, 22, '#ff5a4d', '#000');
+    centerText((G.survSquad?'SQUAD ':'')+hero.def.name+' gugur di GELOMBANG '+G.wave, 92, 12, '#ffd94d', '#000');
+    ctx.font='10px monospace'; ctx.textAlign='center'; ctx.fillStyle='#cfcfe8';
+    ctx.fillText('Total KO: '+totKO+' · Damage: '+Math.round(totDmg), W/2, 122);
+    ctx.fillStyle='#8a8aa8';
+    ctx.fillText('Rekor '+(G.survSquad?'squad':'solo')+': gelombang '+best.best+(best.char?' ('+best.char+')':''), W/2, 142);
+    if(G.wave>=best.best && G.wave>1) centerText('★ REKOR BARU! ★', 166, 12, '#ffd94d', '#000');
+    if(Math.floor(torchT/30)%2===0)
+      centerText('— KLIK / ENTER: COBA LAGI · ESC: MENU —', 220, 11, '#ffffff', '#000');
+    return;
+  }
+  if(G.mode==='boss'){
+    const win=G.bossWin;
+    centerText(win?'🏆 TIM NINJA MENANG!':'💀 RAIJIN MENANG!', 60, 20, win?'#ffd94d':'#ff5a4d', '#000');
+    if(win){
+      const d={def:CHARS[G.fighters.find(f=>f.alive&&f.team===0)?.charIdx||0],x:W/2,y:GROUND,facing:1,pose:'idle',stateT:torchT,state:'idle',guard:0,slow:0,teamColor:null};
+      drawFighter(d);
+    } else {
+      const d={def:BOSS_DEF,x:W/2,y:GROUND,facing:1,pose:'idle',stateT:torchT,state:'idle',guard:0,slow:0,teamColor:null};
+      drawFighter(d);
+    }
+    ctx.font='10px monospace'; ctx.textAlign='center';
+    G.fighters.slice(0,3).forEach((f,i)=>{
+      ctx.fillStyle=f.alive?'#cfcfe8':'#555566';
+      ctx.fillText(f.def.name+' — dmg '+Math.round(f.dmgDealt)+' · KO '+(f.kills), W/2, 108+i*16);
+    });
+    if(Math.floor(torchT/30)%2===0)
+      centerText('— KLIK / ENTER: REMATCH · ESC: MENU —', 220, 11, '#ffffff', '#000');
+    return;
+  }
+  if(G.leagueDone){
+    const L=G.league;
+    centerText('🏆 JUARA LIGA: '+CHARS[G.finalWinner].name+'!', 52, 20, '#ffd94d', '#000');
+    const rows=L.order.map(ci=>({ci, pts:L.points[ci]||0})).sort((a,b)=>b.pts-a.pts);
+    ctx.font='bold 11px monospace'; ctx.textAlign='center';
+    rows.forEach((r,i)=>{
+      ctx.fillStyle=i===0?'#ffd94d':'#8a8aa8';
+      ctx.fillText((i+1)+'. '+CHARS[r.ci].name+' — '+r.pts+' pts', W/2, 92+i*20);
+    });
+    if(Math.floor(torchT/30)%2===0)
+      centerText('— KLIK / ENTER: LIGA BARU · ESC: MENU —', 232, 11, '#ffffff', '#000');
+    return;
+  }
+  let wname='', wcolor='#ffd94d', wdef=null;
+  const fw = G.finalWinner;
+  if(G.tourneyDone){
+    const champ = CHARS[G.tourney.champ];
+    wname='CHAMPION: '+champ.name+'!'; wcolor=champ.color; wdef=champ;
+    centerText('🏆 '+wname, 52, 20, wcolor, '#000');
+    ctx.font='9px monospace'; ctx.textAlign='center';
+    G.tourney.results.forEach((r,i)=>{
+      const lbl = i<2 ? 'SF'+(i+1) : 'FINAL';
+      ctx.fillStyle = i===2 ? '#ffd94d' : '#8a8aa8';
+      ctx.fillText(lbl+': '+CHARS[r.a].name+' vs '+CHARS[r.b].name+' → '+CHARS[r.w].name, W/2, 82+i*15);
+    });
+  }
+  else if(G.mode==='ffa'){
+    const best = fw || G.fighters[0];
+    wname=best.def.name+' MENANG!'; wcolor=best.def.color; wdef=best.def;
+  } else if(G.mode==='team'){
+    const aWin = fw==='A';
+    wname=(aWin?'TIM BIRU':'TIM MERAH')+' MENANG!'; wcolor=TEAM_COLORS[aWin?0:1];
+  } else {
+    const w = fw==='A'?G.fighters[0]:G.fighters[1];
+    wname=w.def.name+' MENANG!'; wcolor=w.def.color; wdef=w.def;
+  }
+  if(wdef){
+    const d={def:wdef,x:W/2,y:GROUND,facing:1,pose:'idle',stateT:torchT,state:'idle',guard:0,slow:0,teamColor:null};
+    drawFighter(d);
+  }
+  if(!G.tourneyDone){
+    centerText('🏆 '+wname, 64, 20, wcolor, '#000');
+  }
+  // statistik
+  const sorted=[...G.fighters].sort((a,b)=>b.dmgDealt-a.dmgDealt);
+  ctx.font='10px monospace'; ctx.textAlign='center';
+  const statY0 = G.tourneyDone ? 138 : 104;
+  sorted.slice(0,4).forEach((f,i)=>{
+    ctx.fillStyle = i===0?'#ffd94d':'#8a8aa8';
+    ctx.fillText((i+1)+'. '+f.def.name+' — dmg '+Math.round(f.dmgDealt)+' · KO '+f.kills, W/2, statY0+i*16);
+  });
+  const score = G.mode==='ffa'
+    ? G.fighters.map(f=>f.def.name[0]+':'+(G.ffaWins[f.id]||0)).join(' ')
+    : G.winsA+' - '+G.winsB;
+  ctx.fillStyle='#6a6a8a'; ctx.font='9px monospace';
+  ctx.fillText('Skor: '+score, W/2, statY0+72);
+  if(Math.floor(torchT/30)%2===0)
+    centerText('— KLIK / ENTER: REMATCH · ESC: MENU —', 232, 11, '#ffffff', '#000');
+}
+
+// ---------- draft flow ----------
+let draftQueue=[], allPicks=[], draftGameMode='duel';
+function startDraft(gameMode){
+  draftGameMode = gameMode;
+  draftQueue = [];
+  if(gameMode==='duel') draftQueue.push({need:2, label:'PILIH 2 NINJA — DUEL 1v1'});
+  else if(gameMode==='team'){
+    draftQueue.push({need:3, label:'PILIH 3 NINJA — TIM BIRU'});
+    draftQueue.push({need:3, label:'PILIH 3 NINJA — TIM MERAH'});
+  }
+  else if(gameMode==='tourney') draftQueue.push({need:4, label:'PILIH 4 NINJA — TOURNAMENT'});
+  else if(gameMode==='survival') draftQueue.push({need:survSetup.squad?3:1, label:'PILIH NINJA — SURVIVAL '+(survSetup.squad?'SQUAD (3)':'SOLO')});
+  else if(gameMode==='boss') draftQueue.push({need:3, label:'PILIH 3 NINJA — LAWAN RAIJIN!'});
+  else if(gameMode==='league') draftQueue.push({need:4, label:'PILIH 4 NINJA — LIGA'});
+  else draftQueue.push({need:4, label:'PILIH 4 NINJA — DEATHMATCH'});
+  allPicks = [];
+  draft = Object.assign({picked:[]}, draftQueue.shift());
+  mode = 'draft';
+}
+function toggleDraft(i){
+  const p = draft.picked, at = p.indexOf(i);
+  if(at>=0) p.splice(at,1);
+  else if(p.length<draft.need){ p.push(i); SFX.select(); }
+}
+function randomDraft(){
+  const idx=CHARS.map((_,i)=>i).sort(()=>Math.random()-0.5);
+  draft.picked = idx.slice(0, draft.need);
+  SFX.select();
+}
+function advanceDraft(){
+  if(draft.picked.length<draft.need) return;
+  allPicks = allPicks.concat(draft.picked);
+  SFX.select();
+  if(draftQueue.length) draft = Object.assign({picked:[]}, draftQueue.shift());
+  else if(draftGameMode==='tourney') newTourney(allPicks);
+  else if(draftGameMode==='survival') newSurvival(allPicks, survSetup);
+  else if(draftGameMode==='boss') newBoss(allPicks);
+  else if(draftGameMode==='league') newLeague(allPicks);
+  else newMatch(draftGameMode, allPicks);
+}
+
+// ---------- input ----------
+addEventListener('keydown', e=>{
+  audioInit();
+  const k=e.key;
+  if(k===' '){
+    if(mode==='title'){ mode='modeselect'; SFX.select(); }
+    else if(mode==='fight'||mode==='roundend') paused=!paused;
+    e.preventDefault(); return;
+  }
+  if(k>='1'&&k<='8'){
+    const n=+k;
+    if(mode==='survsetup' && n<=3){ survSetup.enemies=n; SFX.select(); return; }
+    if(mode==='modeselect' && n<=MODE_DEFS.length){ chooseMode(MODE_DEFS[n-1].id); return; }
+    if(mode==='draft' && n<=CHARS.length){ toggleDraft(n-1); return; }
+    if(mode==='fight'||mode==='roundend'){ speed = n<=2?n:4; return; }
+  }
+  if(k==='r'||k==='R'){ if(G && (mode==='fight'||mode==='roundend')) startRound(); return; }
+  if(k==='l'||k==='L'){ if(G && (mode==='fight'||mode==='roundend')){ cam.lock=!cam.lock; SFX.select(); } return; }
+  if(k==='Escape'){ if(mode==='survsetup'){ mode='modeselect'; SFX.select(); } else { mode='title'; G=null; } return; }
+  if(k==='Enter'){
+    if(mode==='title'){ mode='modeselect'; SFX.select(); }
+    else if(mode==='modeselect') chooseMode(MODE_DEFS[selMode].id);
+    else if(mode==='survsetup') startDraft('survival');
+    else if(mode==='draft') advanceDraft();
+    else if(mode==='tbracket') startTourneyDuel();
+    else if(mode==='lstandings'){
+      const L=G.league;
+      if(L.idx<L.matches.length) startLeagueDuel();
+      else { G.leagueDone=true; mode='matchend'; }
+      return;
+    }
+    else if(mode==='matchend' && G){
+      if(lastGameMode==='tourney') newTourney(lastPicks);
+      else if(lastGameMode==='survival') newSurvival(lastPicks, lastSurvSetup);
+      else if(lastGameMode==='boss') newBoss(lastPicks);
+      else if(lastGameMode==='league') newLeague(lastPicks);
+      else newMatch(G.mode, lastPicks);
+      return;
+    }
+    return;
+  }
+  if(mode==='modeselect'){
+    if(k==='ArrowUp'){ selMode=(selMode+MODE_DEFS.length-1)%MODE_DEFS.length; SFX.select(); }
+    if(k==='ArrowDown'){ selMode=(selMode+1)%MODE_DEFS.length; SFX.select(); }
+  }
+});
+let lastPicks=[], lastGameMode='duel', _suspendRecord=false;
+const _newMatch = newMatch;
+newMatch = function(gameMode, picks){
+  if(!_suspendRecord){ lastPicks=picks.slice(); lastGameMode=gameMode; }
+  _newMatch(gameMode, picks);
+};
+const _newTourney = newTourney;
+newTourney = function(picks){
+  lastPicks=picks.slice(); lastGameMode='tourney';
+  _suspendRecord = true;
+  _newTourney(picks);
+  _suspendRecord = false;
+};
+const _newSurvival = newSurvival;
+let lastSurvSetup={enemies:2, squad:false};
+newSurvival = function(picks, setup){
+  lastPicks=picks.slice(); lastGameMode='survival'; lastSurvSetup=Object.assign({}, setup||{enemies:2, squad:false});
+  _newSurvival(picks, setup);
+};
+const _newBoss = newBoss;
+newBoss = function(picks){
+  lastPicks=picks.slice(); lastGameMode='boss';
+  _newBoss(picks);
+};
+const _newLeague = newLeague;
+newLeague = function(picks){
+  lastPicks=picks.slice(); lastGameMode='league';
+  _suspendRecord = true;
+  _newLeague(picks);
+  _suspendRecord = false;
+};
+
+cv.addEventListener('pointerdown', e=>{
+  audioInit();
+  const r=cv.getBoundingClientRect();
+  const mx=(e.clientX-r.left)/r.width*W, my=(e.clientY-r.top)/r.height*H;
+  if(mode==='title'){ mode='modeselect'; SFX.select(); return; }
+  if(mode==='modeselect'){
+    // baris pengaturan (kecepatan + efek) — sebelum main
+    if(my>=245&&my<=263){
+      const spdVals=[1,2,4];
+      for(let i=0;i<3;i++){
+        const bx=92+i*38;
+        if(mx>=bx&&mx<=bx+34){ menuSpeed=spdVals[i]; SFX.select(); return; }
+      }
+      const fxVals=[1,0];
+      for(let i=0;i<2;i++){
+        const bx=258+i*62;
+        if(mx>=bx&&mx<=bx+58){ menuFx=fxVals[i]; SFX.select(); return; }
+      }
+    }
+    MODE_DEFS.forEach((m,i)=>{
+      const by=46+i*30;
+      if(mx>=W/2-160&&mx<=W/2+160&&my>=by-14&&my<=by+14){ selMode=i; chooseMode(m.id); }
+    });
+    return;
+  }
+  if(mode==='survsetup'){
+    for(let i=0;i<3;i++){
+      const bx=150+i*60;
+      if(mx>=bx&&mx<=bx+48&&my>=78&&my<=106){ survSetup.enemies=i+1; SFX.select(); return; }
+    }
+    if(mx>=140&&mx<=230&&my>=140&&my<=168){ survSetup.squad=false; SFX.select(); return; }
+    if(mx>=250&&mx<=340&&my>=140&&my<=168){ survSetup.squad=true; SFX.select(); return; }
+    if(mx>=W/2-70&&mx<=W/2+70&&my>=216&&my<=248){ startDraft('survival'); return; }
+    return;
+  }
+  if(mode==='draft'){
+    for(let i=0;i<CHARS.length;i++){
+      const {bx,by}=draftCardXY(i);
+      if(mx>=bx-38&&mx<=bx+38&&my>=by-46&&my<=by+46){ toggleDraft(i); return; }
+    }
+    if(mx>=W-150&&mx<=W-84&&my>=10&&my<=36){ advanceDraft(); return; }
+    if(mx>=W-78&&mx<=W-12&&my>=10&&my<=36){ randomDraft(); return; }
+    return;
+  }
+  if(mode==='matchend'){
+    if(lastGameMode==='tourney') newTourney(lastPicks);
+    else if(lastGameMode==='survival') newSurvival(lastPicks[0]);
+    else if(lastGameMode==='boss') newBoss(lastPicks);
+    else if(lastGameMode==='league') newLeague(lastPicks);
+    else if(G) newMatch(G.mode, lastPicks);
+    return;
+  }
+  if(mode==='tbracket'){ startTourneyDuel(); return; }
+  if(mode==='lstandings'){
+    const L=G.league;
+    if(L.idx<L.matches.length) startLeagueDuel();
+    else { G.leagueDone=true; mode='matchend'; }
+    return;
+  }
+  if(mode==='fight'||mode==='roundend'){
+    // toggle auto-lock kamera (simbol pojok kanan atas) — cek dulu sebelum jeda!
+    if(mx>=W-36 && my<=38){ cam.lock=!cam.lock; SFX.select(); return; }
+    paused=!paused;
+  }
+});
+
+// ---------- loop ----------
+// kunci 60fps: di monitor 120Hz/144Hz game tidak boleh jalan 2x lebih cepat
+let lastFrameT=0;
+function frame(t){
+  requestAnimationFrame(frame);
+  if(lastFrameT && t-lastFrameT < 16.6) return;
+  lastFrameT = t;
+  ctx.save();
+  if(shake>0.5) ctx.translate(rnd(-shake,shake)*0.5, rnd(-shake,shake)*0.5);
+
+  if(mode==='title') drawTitle();
+  else if(mode==='modeselect') drawModeSelect();
+  else if(mode==='survsetup') drawSurvSetup();
+  else if(mode==='draft') drawDraft();
+  else if(mode==='tbracket') drawTBracket();
+  else if(mode==='lstandings') drawLStandings();
+  else if(mode==='matchend') drawMatchEnd();
+  else if(G){
+    drawSky();
+    ctx.save();
+    ctx.translate(-Math.round(cam.x), 0);
+    drawWorld();
+    drawHazards();
+    drawOrbs();
+    drawProjectiles();
+    for(const f of G.fighters){ f.draw(); drawFighterTag(f); }
+    drawFx();
+    ctx.restore();
+    // banner ultimate sinematik
+    if(G.ultFreeze && G.ultFreeze.state==='ultimate'){
+      rect(0,0,W,H,'rgba(5,0,15,0.55)');
+      const uf=G.ultFreeze;
+      centerText('⚡ ULTIMATE ⚡', 100, 14, '#c88cff', '#000');
+      centerText(uf.def.ult.name, 128, 22, '#ffffff', '#4a1a7a');
+      centerText(uf.def.name, 150, 11, uf.def.color, '#000');
+    }
+    drawHUD();
+    drawComm();
+    drawKillFeed();
+    drawStatsPanel();
+    drawCamLock();
+    if(G.phase==='intro'){
+      const t = G.phaseT>55 ? 'ROUND '+G.round : 'FIGHT!';
+      centerText(t, 130, 22, '#ffd94d', '#7a2e00');
+      if(G.phaseT>55){
+        ctx.font='9px monospace'; ctx.textAlign='center'; ctx.fillStyle='#8a8aa8';
+        ctx.fillText('— '+curStage.name+' —', W/2, 148);
+      }
+    }
+    else if(G.phase==='roundend' && G.winnerLabel){
+      if(G.slowmo>0) centerText('FINISH!', 110, 26, '#ffd94d', '#7a2e00');
+      else centerText(G.winnerLabel, 110, 18, '#ffd94d', '#7a2e00');
+    }
+    if(paused){
+      rect(0,0,W,H,'rgba(0,0,0,0.5)');
+      centerText('JEDA — klik/Spasi untuk lanjut', H/2, 12, '#fff');
+      ctx.font='9px monospace'; ctx.textAlign='center'; ctx.fillStyle='#8a8aa8';
+      ctx.fillText('Kecepatan: '+speed+'x (atur di menu awal) · R: ulangi ronde · Esc: menu', W/2, H/2+22);
+    }
+  }
+  ctx.restore();
+  if(!paused){
+    updateComm();
+    updateKillFeed();
+    // slow-mo FINISH (batch 4): simulasi berjalan 1/3 kecepatan
+    let skipSim = false;
+    if(G && G.slowmo>0){ G.slowmo--; skipSim = (G.slowmo%3)!==0; }
+    if(!skipSim){
+      if(mode==='fight'||mode==='roundend') updateCamera();
+      if(mode==='fight') updateFight();
+      else if(mode==='roundend') updateRoundEnd();
+    }
+  }
+}
+requestAnimationFrame(frame);
 </script>
 </body>
 </html>
