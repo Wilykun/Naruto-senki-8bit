@@ -1199,9 +1199,15 @@ Fighter.prototype.chooseTarget = function(foes){
 Fighter.prototype.think = function(foes){
   this.aiT--;
   if(this.aiT>0) return;
-  this.aiT = 5;
+  const _diff = AI_LEVELS[aiLevel];
+  this.aiT = _diff.react;
   const inp = this.input = {};
   if(this.busy || !this.alive || !this.onStage) return;
+  // AI level rendah kadang bengong / salah langkah
+  if(_diff.mistake>0 && Math.random()<_diff.mistake){
+    if(Math.random()<0.5) return;
+    inp[Math.random()<0.5?'left':'right']=true; return;
+  }
 
   this.retargetT--;
   if(!this.target || !this.target.alive || !this.target.onStage || this.retargetT<=0){
@@ -1217,7 +1223,7 @@ Fighter.prototype.think = function(foes){
 
   // --- kepribadian & adaptasi ---
   const pers = this.persona || PERSONAS[3];
-  const sk = this.skill, r = Math.random();
+  const sk = this.skill * _diff.skill, r = Math.random();
   const aggr = clamp(this.def.aggression + pers.aggro, 0.1, 0.95);
   const s1 = this.def.s1, s2 = this.def.s2;
   const ad = this.adapt;
@@ -1406,6 +1412,15 @@ let selMode = 0;
 let speed = 1, paused = false;
 let menuSpeed = 1; // pengaturan kecepatan di menu awal (1/2/4)
 let menuFx = 0; // 0=RINGAN (default, tanpa percikan/animasi), 1=PENUH
+// Tingkat kecerdasan AI: 0=GAMPANG .. 4=EXTREM
+const AI_LEVELS=[
+  {name:'GAMPANG', react:14, skill:0.3, mistake:0.18},
+  {name:'MUDAH', react:9, skill:0.6, mistake:0.08},
+  {name:'NORMAL', react:5, skill:1.0, mistake:0},
+  {name:'SULIT', react:3, skill:1.3, mistake:0},
+  {name:'EXTREM', react:2, skill:1.6, mistake:0},
+];
+let aiLevel = 2; // default NORMAL
 const SPEEDS = [1,2,4];
 const TEAM_COLORS = ['#3e8fe0', '#e0393e'];
 
@@ -2027,10 +2042,68 @@ function drawModeSelect(){
     ctx.fillStyle=active?'#ffd94d':'#8a8aa8'; ctx.textAlign='center';
     ctx.fillText(label, bx+29, 258); ctx.textAlign='left';
   });
+  // tombol tingkat AI (klik untuk ganti)
+  ctx.fillStyle='#8a8aa8'; ctx.textAlign='left';
+  ctx.fillText('AI:', 386, 257);
+  const abx=406, alabel=AI_LEVELS[aiLevel].name;
+  rect(abx, 245, 64, 18, '#2a2a5e');
+  rect(abx, 245, 64, 2, '#ffd94d');
+  rect(abx, 261, 64, 2, '#ffd94d');
+  ctx.fillStyle='#ffd94d'; ctx.textAlign='center';
+  ctx.fillText(alabel, abx+32, 258); ctx.textAlign='left';
 }
 function draftCardXY(i){
   const row=i<6?0:1, col=i%6;
   return { bx:40+col*80, by:row?206:108 };
+}
+function drawBet(){
+  drawBackground();
+  centerText('🎯 TEBAK PEMENANG!', 40, 20, '#ffd94d', '#7a2e00');
+  const bp = betPending; if(!bp) return;
+  ctx.font='9px monospace'; ctx.textAlign='center'; ctx.fillStyle='#8a8aa8';
+  ctx.fillText('Siapa yang bakal menang? Klik pilihanmu!', W/2, 62);
+  // statistik taruhan
+  const bs = betStats;
+  ctx.fillStyle='#6a6a8a';
+  ctx.fillText('Menang: '+bs.wins+' · Kalah: '+bs.losses+' · Streak: '+bs.streak+' (terbaik '+bs.best+')', W/2, 78);
+  if(bp.mode==='team'){
+    // pilih tim
+    [['TIM BIRU',0,'#3e8fe0'],['TIM MERAH',1,'#e0393e']].forEach(([label,ti,c],i)=>{
+      const bx=W/2-160+i*170, by=110;
+      const sel = betTeam===ti;
+      rect(bx, by, 150, 60, sel?'#2a2a5e':'#141422');
+      rect(bx, by, 150, 3, c);
+      rect(bx, by+57, 150, 3, c);
+      ctx.fillStyle=sel?'#ffd94d':c; ctx.font='bold 13px monospace';
+      ctx.fillText(label, bx+75, by+28);
+      ctx.font='8px monospace'; ctx.fillStyle='#8a8aa8';
+      const names = bp.picks.slice(ti*3, ti*3+3).map(ci=>CHARS[ci].name).join(', ');
+      ctx.fillText(names, bx+75, by+46);
+    });
+  } else {
+    // pilih ninja (duel/ffa)
+    bp.picks.forEach((ci,i)=>{
+      const c=CHARS[ci];
+      const bx=40+i*((W-80)/bp.picks.length), bw=(W-80)/bp.picks.length-8, by=110;
+      const sel = betCharId===c.id;
+      rect(bx, by, bw, 70, sel?'#2a2a5e':'#141422');
+      rect(bx, by, bw, 3, c.color);
+      rect(bx, by+67, bw, 3, c.color);
+      const d={def:c,x:bx+bw/2,y:by+38,facing:1,pose:'idle',stateT:torchT,state:'idle',guard:0,slow:0,teamColor:null};
+      drawFighter(d);
+      ctx.fillStyle=sel?'#ffd94d':c.color; ctx.font='bold 10px monospace';
+      ctx.fillText(c.name, bx+bw/2, by+62);
+    });
+  }
+  // tombol lewati
+  rect(W/2-60, 210, 120, 26, '#141422');
+  rect(W/2-60, 210, 120, 2, '#3a3a5a');
+  ctx.fillStyle='#8a8aa8'; ctx.font='bold 11px monospace';
+  ctx.fillText('LEWATI →', W/2, 227);
+  if(Math.floor(torchT/30)%2===0){
+    ctx.font='9px monospace'; ctx.fillStyle='#6a6a8a';
+    ctx.fillText('atau tekan 1-'+bp.picks.length+' / 0 = lewati', W/2, 252);
+  }
 }
 function drawDraft(){
   drawBackground();
@@ -2148,6 +2221,21 @@ function drawMatchEnd(){
   if(!G.tourneyDone){
     centerText('🏆 '+wname, 64, 20, wcolor, '#000');
   }
+  // hasil taruhan
+  if(!G.tourneyDone && !G.leagueDone && (betCharId || betTeam>=0)){
+    let betWin=false;
+    if(G.mode==='ffa' && fw && fw.def){ betWin = fw.def.id===betCharId; }
+    else if(G.mode==='team'){ betWin = (fw==='A'?0:1)===betTeam; }
+    else if(fw){ const w=fw==='A'?G.fighters[0]:G.fighters[1]; betWin = w.def.id===betCharId; }
+    // update statistik (sekali saja)
+    if(!G._betCounted){
+      G._betCounted=true;
+      if(betWin){ betStats.wins++; betStats.streak++; betStats.best=Math.max(betStats.best,betStats.streak); }
+      else { betStats.losses++; betStats.streak=0; }
+      betSave();
+    }
+    centerText(betWin?'🎯 TEBAKANMU BENAR!':'❌ TEBAKANMU MELESET', 86, 12, betWin?'#7dff8a':'#ff5a4d', '#000');
+  }
   // statistik
   const sorted=[...G.fighters].sort((a,b)=>b.dmgDealt-a.dmgDealt);
   ctx.font='10px monospace'; ctx.textAlign='center';
@@ -2167,6 +2255,11 @@ function drawMatchEnd(){
 
 // ---------- draft flow ----------
 let draftQueue=[], allPicks=[], draftGameMode='duel';
+// --- taruhan tebak pemenang ---
+let betCharId=null, betTeam=-1, betPending=null; // betPending={mode,picks}
+let betStats={wins:0, losses:0, streak:0, best:0};
+try{ const b=JSON.parse(localStorage.getItem('ss8_bet')||'{}'); if(b.wins!=null) betStats=b; }catch(e){}
+function betSave(){ try{ localStorage.setItem('ss8_bet', JSON.stringify(betStats)); }catch(e){} }
 function startDraft(gameMode){
   draftGameMode = gameMode;
   draftQueue = [];
@@ -2203,7 +2296,12 @@ function advanceDraft(){
   else if(draftGameMode==='survival') newSurvival(allPicks, survSetup);
   else if(draftGameMode==='boss') newBoss(allPicks);
   else if(draftGameMode==='league') newLeague(allPicks);
-  else newMatch(draftGameMode, allPicks);
+  else { betPending={mode:draftGameMode, picks:allPicks.slice()}; betCharId=null; betTeam=-1; mode='bet'; }
+}
+function placeBet(){
+  // dipanggil setelah user pilih taruhan (atau lewati)
+  const bp = betPending; betPending=null;
+  if(bp) newMatch(bp.mode, bp.picks);
 }
 
 // ---------- input ----------
@@ -2225,6 +2323,15 @@ addEventListener('keydown', e=>{
   if(mode==='draft'){
     const extra={'9':8,'0':9,'q':10,'Q':10,'w':11,'W':11};
     if(k in extra && extra[k]<CHARS.length){ toggleDraft(extra[k]); return; }
+  }
+  if(mode==='bet' && betPending){
+    const bp=betPending;
+    if(k>='1' && k<='9'){
+      const n=+k;
+      if(bp.mode==='team' && n<=2){ betTeam=n-1; SFX.select(); placeBet(); return; }
+      if(n<=bp.picks.length){ betCharId=CHARS[bp.picks[n-1]].id; SFX.select(); placeBet(); return; }
+    }
+    if(k==='0'){ SFX.select(); placeBet(); return; } // lewati
   }
   if(k==='r'||k==='R'){ if(G && (mode==='fight'||mode==='roundend')) startRound(); return; }
   if(k==='l'||k==='L'){ if(G && (mode==='fight'||mode==='roundend')){ cam.lock=!cam.lock; SFX.select(); } return; }
@@ -2306,6 +2413,8 @@ cv.addEventListener('pointerdown', e=>{
         const bx=258+i*62;
         if(mx>=bx&&mx<=bx+58){ menuFx=fxVals[i]; SFX.select(); return; }
       }
+      // tombol AI: klik untuk cycle tingkat
+      if(mx>=406&&mx<=470){ aiLevel=(aiLevel+1)%AI_LEVELS.length; SFX.select(); return; }
     }
     MODE_DEFS.forEach((m,i)=>{
       const by=46+i*30;
@@ -2330,6 +2439,25 @@ cv.addEventListener('pointerdown', e=>{
     }
     if(mx>=W-150&&mx<=W-84&&my>=10&&my<=36){ advanceDraft(); return; }
     if(mx>=W-78&&mx<=W-12&&my>=10&&my<=36){ randomDraft(); return; }
+    return;
+  }
+  if(mode==='bet' && betPending){
+    const bp=betPending;
+    // tombol lewati
+    if(mx>=W/2-60&&mx<=W/2+60&&my>=210&&my<=236){ SFX.select(); placeBet(); return; }
+    if(bp.mode==='team'){
+      for(let ti=0;ti<2;ti++){
+        const bx=W/2-160+ti*170, by=110;
+        if(mx>=bx&&mx<=bx+150&&my>=by&&my<=by+60){ betTeam=ti; SFX.select(); placeBet(); return; }
+      }
+    } else {
+      bp.picks.forEach((ci,i)=>{
+        const bx=40+i*((W-80)/bp.picks.length), bw=(W-80)/bp.picks.length-8, by=110;
+        if(mx>=bx&&mx<=bx+bw&&my>=by&&my<=by+70){
+          betCharId=CHARS[ci].id; SFX.select(); placeBet(); return;
+        }
+      });
+    }
     return;
   }
   if(mode==='matchend'){
@@ -2368,6 +2496,7 @@ function frame(t){
   else if(mode==='modeselect') drawModeSelect();
   else if(mode==='survsetup') drawSurvSetup();
   else if(mode==='draft') drawDraft();
+  else if(mode==='bet') drawBet();
   else if(mode==='tbracket') drawTBracket();
   else if(mode==='lstandings') drawLStandings();
   else if(mode==='matchend') drawMatchEnd();
