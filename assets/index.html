@@ -58,6 +58,7 @@ ctx.imageSmoothingEnabled = false;
 // dunia lebih lebar dari layar — kamera mengikuti pertarungan
 const WORLD_W = 960;
 let cam = {x:0, tx:0, lock:true}; // lock: auto-lock ke titik aksi (bisa toggle klik pojok / tombol L)
+let camDrag = null; // {sx, stx} untuk geser kamera manual saat unlock
 function actionPoint(){
   if(!G) return null;
   const alive = G.fighters.filter(f=>f.alive&&f.onStage);
@@ -79,14 +80,7 @@ function updateCamera(){
   if(!G) return;
   let targetX=null;
   if(cam.lock) targetX=actionPoint();
-  else{
-    const alive = G.fighters.filter(f=>f.alive&&f.onStage);
-    if(alive.length){
-      let mn=1e9, mx=-1e9;
-      for(const f of alive){ if(f.x<mn)mn=f.x; if(f.x>mx)mx=f.x; }
-      targetX=(mn+mx)/2;
-    }
-  }
+  // saat unlock: kamera full manual (drag/arrow), tidak auto-center
   if(targetX!==null) cam.tx = clamp(targetX - W/2, 0, WORLD_W-W);
   cam.x += (cam.tx-cam.x)*0.08;
   if(Math.abs(cam.tx-cam.x)<0.5) cam.x=cam.tx;
@@ -222,14 +216,15 @@ function drawKillFeed(){
 function drawStatsPanel(){
   if(!G || (mode!=='fight'&&mode!=='roundend')) return;
   ctx.font='8px monospace';
-  const fs=G.fighters;
-  const pw=134, ph=24+fs.length*11;
+  // urut kill terbanyak di atas
+  const fs=[...G.fighters].sort((a,b)=>b.kills-a.kills || b.dmgDealt-a.dmgDealt);
+  const pw=148, ph=24+fs.length*11;
   rect(4, 4, pw, ph, 'rgba(8,8,18,0.82)');
   rect(4, 4, pw, 2, '#ffd94d'); // aksen emas
   ctx.textAlign='left'; ctx.fillStyle='#8a8aa8';
   ctx.fillText('— STATS —', 10, 15);
   ctx.textAlign='right'; ctx.fillStyle='#5a5a78';
-  ctx.fillText('K', 100, 15); ctx.fillText('DMG', 128, 15);
+  ctx.fillText('K', 96, 15); ctx.fillText('A', 112, 15); ctx.fillText('DMG', 142, 15);
   ctx.textAlign='left';
   fs.forEach((f,i)=>{
     const y=19+i*11;
@@ -238,8 +233,9 @@ function drawStatsPanel(){
     ctx.fillStyle=f.alive?'#e8e8f0':'#555566';
     ctx.fillText(f.def.name, 20, y+8);
     ctx.textAlign='right'; ctx.fillStyle=f.alive?'#cfcfe8':'#555566';
-    ctx.fillText(''+f.kills, 100, y+8);
-    ctx.fillText(''+Math.round(f.dmgDealt), 128, y+8);
+    ctx.fillText(''+f.kills, 96, y+8);
+    ctx.fillText(''+f.assists, 112, y+8);
+    ctx.fillText(''+Math.round(f.dmgDealt), 142, y+8);
     ctx.textAlign='left';
   });
 }
@@ -479,6 +475,38 @@ const CHARS = [
          desc:'Badai 5 shuriken' },
     s2:{ name:'Sky Guard', type:'guard', dmg:0, cost:35,
          desc:'Perisai langit 4 dtk' },
+    ult:{ name:'-', type:'inferno', dmg:0, desc:'-' } },
+  { id:'hikari', name:'HIKARI', color:'#e8e0b0', dark:'#7a6a3a',
+    desc:'Cahaya suci', voice:1.35,
+    hp:88, speed:1.7, power:9, aggression:0.6, range:55, skill:1.05,
+    s1:{ name:'Holy Ray', type:'fireball', dmg:21, cost:50,
+         desc:'Sinar suci' },
+    s2:{ name:'Prism Guard', type:'guard', dmg:0, cost:35,
+         desc:'Perisai cahaya 4 dtk' },
+    ult:{ name:'-', type:'inferno', dmg:0, desc:'-' } },
+  { id:'kuro', name:'KURO', color:'#4a4a5a', dark:'#1a1a2a',
+    desc:'Kegelapan', voice:0.68,
+    hp:105, speed:1.5, power:11, aggression:0.68, range:24, skill:1.0,
+    s1:{ name:'Abyss Orb', type:'fireball', dmg:23, cost:50,
+         desc:'Bola kegelapan' },
+    s2:{ name:'Shadow Rush', type:'dash', dmg:19, cost:50,
+         desc:'Dash bayangan' },
+    ult:{ name:'-', type:'inferno', dmg:0, desc:'-' } },
+  { id:'tora', name:'TORA', color:'#c87820', dark:'#6a3a0a',
+    desc:'Harimau buas', voice:0.85,
+    hp:110, speed:1.8, power:13, aggression:0.75, range:22, skill:0.95,
+    s1:{ name:'Tiger Claw', type:'uppercut', dmg:18, cost:40,
+         desc:'Cakaran harimau' },
+    s2:{ name:'Feral Dash', type:'dash', dmg:20, cost:50,
+         desc:'Terjangan buas' },
+    ult:{ name:'-', type:'inferno', dmg:0, desc:'-' } },
+  { id:'kappa', name:'KAPPA', color:'#3aa880', dark:'#1a5a3a',
+    desc:'Imp air', voice:1.25,
+    hp:95, speed:1.55, power:10, aggression:0.55, range:45, skill:1.0,
+    s1:{ name:'River Shot', type:'fireball', dmg:20, cost:50,
+         desc:'Tembakan sungai' },
+    s2:{ name:'Shell Guard', type:'guard', dmg:0, cost:35,
+         desc:'Tempurung 4 dtk' },
     ult:{ name:'-', type:'inferno', dmg:0, desc:'-' } },
 ];
 
@@ -758,7 +786,8 @@ class Fighter {
     this.cool = { atk:0, shu:0, s1:0, s2:0, dash:0 };
     this.dodgeT = 0; this.dashDir = 1;
     this.combo = 0; this.comboT = 0;
-    this.dmgDealt = 0; this.kills = 0;
+    this.dmgDealt = 0; this.kills = 0; this.assists = 0;
+    this.hitBy = new Set(); // pelacak assist
     this.blocking = false; this.onStage = true;
     this.guard = 0; this.slow = 0;
     this.dashHit = false; this.slamDone = false; this.novaDone = false;
@@ -797,6 +826,7 @@ class Fighter {
       spawnParticles(this.x, this.y-14, 4, ['#9ad8ff','#ffffff'], 1.5);
       this.hp = Math.max(0, this.hp-dmg);
       if(attacker){ attacker.dmgDealt += dmg; attacker.adapt.foeBlocks++; }
+      if(attacker && attacker!==this) this.hitBy.add(attacker);
     } else {
       this.state='hurt'; this.stateT=0; SFX.hit(); shake=Math.min(6,shake+3);
       spawnParticles(this.x, this.y-14, 8, ['#ff5a4d','#ffd94d','#ffffff'], 2.5);
@@ -804,15 +834,31 @@ class Fighter {
       this.hp = Math.max(0, this.hp-dmg);
       this.vx = kx;
       if(attacker){ attacker.dmgDealt += dmg; attacker.ult=Math.min(100,attacker.ult+dmg*0.5); }
+      if(attacker && attacker!==this) this.hitBy.add(attacker);
       this.ult=Math.min(100,this.ult+dmg*0.25);
     }
     this.combo=0;
     if(this.hp<=0){
       this.state='ko'; this.stateT=0; SFX.ko();
-      hitstop = Math.max(hitstop, 12);
-      spawnParticles(this.x, this.y-10, 16, [this.def.color,'#ffffff','#ffd94d'], 3);
+      hitstop = Math.max(hitstop, 14);
+      shake = Math.max(shake, 8);
+      // ledakan partikel warna karakter (lebih meriah)
+      spawnParticles(this.x, this.y-10, 28, [this.def.color, this.def.dark,'#ffffff','#ffd94d'], 4);
+      spawnParticles(this.x, this.y-20, 12, ['#ffffff','#ffd94d'], 2);
+      spawnFloater(this.x, this.y-52, 'K.O.!', this.def.color);
+      // gelombang kejut
+      for(let a=0;a<16;a++){
+        const ang=a/16*Math.PI*2;
+        particles.push({x:this.x, y:this.y-14, vx:Math.cos(ang)*5, vy:Math.sin(ang)*5,
+          t:22, c:this.def.color, ring:true});
+      }
       if(attacker && attacker!==this){
         attacker.kills++;
+        // assist untuk yang ikut damage (kecuali killer)
+        for(const a of this.hitBy){
+          if(a!==attacker && a!==this) a.assists++;
+        }
+        this.hitBy.clear();
         // pengumuman
         if(G && G.phase==='fight'){
           if(!G.firstBlood){ G.firstBlood=true; spawnFloater(W/2, 88, 'FIRST BLOOD!', '#ff5a4d'); SFX.select(); }
@@ -1988,7 +2034,7 @@ function drawTitle(){
   drawFighter(d1); drawFighter(d2);
   if(Math.floor(torchT/30)%2===0)
     centerText('— KLIK / ENTER UNTUK MULAI —', 196, 11, '#ffffff', '#000');
-  centerText('12 ninja · 2 jurus unik tiap ninja · AI super cerdas', 232, 9, '#6a6a8a');
+  centerText('16 ninja · 2 jurus unik tiap ninja · AI super cerdas', 232, 9, '#6a6a8a');
   const hof = hofTop();
   if(hof) centerText('👑 HALL OF FAME: '+hof.c.name+' ×'+hof.w, 244, 9, '#ffd94d');
   const sv = survBestGet(false), sq = survBestGet(true);
@@ -2053,8 +2099,8 @@ function drawModeSelect(){
   ctx.fillText(alabel, abx+32, 258); ctx.textAlign='left';
 }
 function draftCardXY(i){
-  const row=i<6?0:1, col=i%6;
-  return { bx:40+col*80, by:row?206:108 };
+  const row=Math.floor(i/4), col=i%4;
+  return { bx:72+col*112, by:80+row*50 };
 }
 function drawBet(){
   drawBackground();
@@ -2121,23 +2167,24 @@ function drawDraft(){
     const c=CHARS[i], {bx,by}=draftCardXY(i);
     const pi = draft.picked.indexOf(i);
     const chosen = pi>=0;
-    rect(bx-38,by-46,76,92, chosen?'#2a2a5e':'#141422');
-    rect(bx-38,by-46,76,3, chosen?'#ffd94d':c.color);
-    const d={def:c,x:bx,y:by+8,facing:1,pose:'idle',stateT:torchT+i*10,state:'idle',guard:0,slow:0,teamColor:null};
+    // kartu kompak 4x4: sprite + nama
+    rect(bx-50,by-22,100,44, chosen?'#2a2a5e':'#141422');
+    rect(bx-50,by-22,100,3, chosen?'#ffd94d':c.color);
+    rect(bx-50,by+19,100,3, chosen?'#ffd94d':c.color);
+    const d={def:c,x:bx-28,y:by+6,facing:1,pose:'idle',stateT:torchT+i*10,state:'idle',guard:0,slow:0,teamColor:null};
     drawFighter(d);
-    ctx.font='bold 9px monospace'; ctx.textAlign='center';
-    ctx.fillStyle=c.color; ctx.fillText(c.name, bx, by+28);
+    ctx.font='bold 9px monospace'; ctx.textAlign='left';
+    ctx.fillStyle=c.color; ctx.fillText(c.name, bx-12, by-2);
     ctx.font='7px monospace'; ctx.fillStyle='#8a8aa8';
-    ctx.fillText(c.s1.name, bx, by+38);
-    ctx.fillText(c.s2.name, bx, by+46);
+    ctx.fillText(c.desc, bx-12, by+10);
     if(chosen){
       ctx.fillStyle='#ffd94d';
-      ctx.font='bold 10px monospace';
-      ctx.fillText('✓'+(pi+1), bx+28, by-36);
+      ctx.font='bold 10px monospace'; ctx.textAlign='center';
+      ctx.fillText('✓'+(pi+1), bx+40, by-12);
     }
   }
   ctx.font='8px monospace'; ctx.fillStyle='#6a6a8a'; ctx.textAlign='center';
-  ctx.fillText('klik kartu untuk pilih/hapus · tombol 1-9, 0, Q, W juga bisa', W/2, 262);
+  ctx.fillText('klik kartu untuk pilih/hapus · tombol 1-9, 0, Q-Y juga bisa', W/2, 262);
 }
 function drawMatchEnd(){
   drawBackground();
@@ -2321,7 +2368,7 @@ addEventListener('keydown', e=>{
     if(mode==='fight'||mode==='roundend'){ speed = n<=2?n:4; return; }
   }
   if(mode==='draft'){
-    const extra={'9':8,'0':9,'q':10,'Q':10,'w':11,'W':11};
+    const extra={'9':8,'0':9,'q':10,'Q':10,'w':11,'W':11,'e':12,'E':12,'r':13,'R':13,'t':14,'T':14,'y':15,'Y':15};
     if(k in extra && extra[k]<CHARS.length){ toggleDraft(extra[k]); return; }
   }
   if(mode==='bet' && betPending){
@@ -2335,6 +2382,11 @@ addEventListener('keydown', e=>{
   }
   if(k==='r'||k==='R'){ if(G && (mode==='fight'||mode==='roundend')) startRound(); return; }
   if(k==='l'||k==='L'){ if(G && (mode==='fight'||mode==='roundend')){ cam.lock=!cam.lock; SFX.select(); } return; }
+  // geser kamera manual saat unlock (PC: panah kiri/kanan)
+  if((k==='ArrowLeft'||k==='ArrowRight') && G && !cam.lock && (mode==='fight'||mode==='roundend')){
+    cam.tx = clamp(cam.tx + (k==='ArrowLeft'?-40:40), 0, WORLD_W-W);
+    e.preventDefault(); return;
+  }
   if(k==='Escape'){ if(mode==='survsetup'){ mode='modeselect'; SFX.select(); } else { mode='title'; G=null; } return; }
   if(k==='Enter'){
     if(mode==='title'){ mode='modeselect'; SFX.select(); }
@@ -2435,7 +2487,7 @@ cv.addEventListener('pointerdown', e=>{
   if(mode==='draft'){
     for(let i=0;i<CHARS.length;i++){
       const {bx,by}=draftCardXY(i);
-      if(mx>=bx-38&&mx<=bx+38&&my>=by-46&&my<=by+46){ toggleDraft(i); return; }
+      if(mx>=bx-50&&mx<=bx+50&&my>=by-22&&my<=by+22){ toggleDraft(i); return; }
     }
     if(mx>=W-150&&mx<=W-84&&my>=10&&my<=36){ advanceDraft(); return; }
     if(mx>=W-78&&mx<=W-12&&my>=10&&my<=36){ randomDraft(); return; }
@@ -2478,9 +2530,27 @@ cv.addEventListener('pointerdown', e=>{
   if(mode==='fight'||mode==='roundend'){
     // toggle auto-lock kamera (simbol pojok kanan atas) — cek dulu sebelum jeda!
     if(mx>=W-36 && my<=38){ cam.lock=!cam.lock; SFX.select(); return; }
+    // mulai drag kamera manual saat unlock
+    if(!cam.lock){ camDrag={sx:mx, stx:cam.tx, moved:false}; return; }
     paused=!paused;
   }
 });
+cv.addEventListener('pointermove', e=>{
+  if(!camDrag || cam.lock) return;
+  const r=cv.getBoundingClientRect();
+  const mx=(e.clientX-r.left)/r.width*W;
+  const dx=mx-camDrag.sx;
+  if(Math.abs(dx)>8) camDrag.moved=true;
+  if(camDrag.moved) cam.tx=clamp(camDrag.stx-dx, 0, WORLD_W-W);
+});
+cv.addEventListener('pointerup', e=>{
+  if(camDrag){
+    // tap (tanpa geser) = jeda; geser = kamera saja
+    if(!camDrag.moved && (mode==='fight'||mode==='roundend')) paused=!paused;
+    camDrag=null;
+  }
+});
+cv.addEventListener('pointercancel', ()=>{ camDrag=null; });
 
 // ---------- loop ----------
 // kunci 60fps: di monitor 120Hz/144Hz game tidak boleh jalan 2x lebih cepat
