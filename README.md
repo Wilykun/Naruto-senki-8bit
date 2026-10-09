@@ -15,7 +15,7 @@
 
 ## 🎮 Tentang Game
 
-**Shinobi Senki 8-bit** adalah game arena pertarungan 2D bergaya retro 8-bit di mana **kamu tidak mengendalikan siapa pun** — 8 ninja orisinal bertarung sendiri-sendiri dengan AI yang super cerdas. Pilih mode, pilih ninja favoritmu, lalu saksikan pertempuran epik dengan komentator, kill feed, dan statistik live!
+**Shinobi Senki 8-bit** adalah game arena pertarungan 2D bergaya retro 8-bit di mana **kamu tidak mengendalikan siapa pun** — 12 ninja orisinal bertarung sendiri-sendiri dengan AI yang super cerdas. Pilih mode, pilih ninja favoritmu, lalu saksikan pertempuran epik dengan komentator, kill feed, dan statistik live!
 
 100% offline, tanpa iklan, tanpa pay-to-win. Murni tontonan seru~
 
