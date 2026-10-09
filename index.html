@@ -48,7 +48,7 @@
 <script>
 'use strict';
 // auto-update: cek versi server, reload bila beda (hanya saat online via http)
-const GAME_VERSION = '1.4.1';
+const GAME_VERSION = '1.4.2';
 (function(){
   if(!/^https?:/.test(location.protocol)) return;
   const cur = new URLSearchParams(location.search).get('v');
@@ -245,11 +245,17 @@ function drawStatsPanel(){
   ctx.textAlign='left';
   fs.forEach((f,i)=>{
     const y=19+i*11;
-    const col=f.alive?(f.teamColor||f.def.color):'#555566';
-    rect(10, y+1, 6, 6, col); // dot warna karakter/tim
-    ctx.fillStyle=f.alive?'#e8e8f0':'#555566';
-    ctx.fillText(f.def.name, 20, y+8);
-    ctx.textAlign='right'; ctx.fillStyle=f.alive?'#cfcfe8':'#555566';
+    const teamCol = f.teamColor || f.def.color;
+    // dot: selalu warna tim (mati pun tetap terlihat timnya)
+    rect(10, y+1, 6, 6, teamCol);
+    if(!f.alive){
+      // tanda silang untuk yang KO
+      ctx.fillStyle='#ff5a4d';
+      ctx.fillRect(10, y+1, 6, 1); ctx.fillRect(10, y+6, 6, 1);
+    }
+    ctx.fillStyle=f.alive?'#e8e8f0':'#777788';
+    ctx.fillText(f.def.name+(f.alive?'':' ✝'), 20, y+8);
+    ctx.textAlign='right'; ctx.fillStyle=f.alive?'#cfcfe8':'#777788';
     ctx.fillText(''+f.kills, 96, y+8);
     ctx.fillText(''+f.assists, 112, y+8);
     ctx.fillText(''+Math.round(f.dmgDealt), 142, y+8);
