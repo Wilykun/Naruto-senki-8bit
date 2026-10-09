@@ -448,6 +448,38 @@ const CHARS = [
     s2:{ name:'Frost Tide', type:'nova', dmg:17, cost:45,
          desc:'Ledakan air + slow' },
     ult:{ name:'-', type:'inferno', dmg:0, desc:'-' } },
+  { id:'daichi', name:'DAICHI', color:'#a06a35', dark:'#5a3a15',
+    desc:'Tanah kokoh', voice:0.72,
+    hp:130, speed:1.1, power:16, aggression:0.4, range:28, skill:0.9,
+    s1:{ name:'Rock Throw', type:'fireball', dmg:24, cost:50,
+         desc:'Lemparan batu besar' },
+    s2:{ name:'Quake Slam', type:'slam', dmg:30, cost:50,
+         desc:'Gempa bumi AoE' },
+    ult:{ name:'-', type:'inferno', dmg:0, desc:'-' } },
+  { id:'mizuki', name:'MIZUKI', color:'#1a6ad8', dark:'#0a3a7a',
+    desc:'Air deras', voice:1.22,
+    hp:95, speed:1.6, power:9, aggression:0.58, range:60, skill:1.05,
+    s1:{ name:'Aqua Bullet', type:'fireball', dmg:20, cost:50,
+         desc:'Peluru air cepat' },
+    s2:{ name:'Whirlpool', type:'nova', dmg:16, cost:45,
+         desc:'Pusaran air + slow' },
+    ult:{ name:'-', type:'inferno', dmg:0, desc:'-' } },
+  { id:'kasumi', name:'KASUMI', color:'#8a8a9a', dark:'#3a3a4a',
+    desc:'Kabut licik', voice:1.32,
+    hp:85, speed:1.9, power:8, aggression:0.65, range:24, skill:1.15,
+    s1:{ name:'Mist Dash', type:'dash', dmg:17, cost:50,
+         desc:'Dash berkabut' },
+    s2:{ name:'Phantom Blades', type:'blades', dmg:19, cost:40,
+         desc:'2 pisau hantu' },
+    ult:{ name:'-', type:'inferno', dmg:0, desc:'-' } },
+  { id:'sora', name:'SORA', color:'#e07830', dark:'#7a3a10',
+    desc:'Langit bebas', voice:1.12,
+    hp:90, speed:1.75, power:9, aggression:0.62, range:40, skill:1.0,
+    s1:{ name:'Gale Storm', type:'storm', dmg:19, cost:50,
+         desc:'Badai 5 shuriken' },
+    s2:{ name:'Sky Guard', type:'guard', dmg:0, cost:35,
+         desc:'Perisai langit 4 dtk' },
+    ult:{ name:'-', type:'inferno', dmg:0, desc:'-' } },
 ];
 
 // ---------- BOSS ----------
@@ -1941,7 +1973,7 @@ function drawTitle(){
   drawFighter(d1); drawFighter(d2);
   if(Math.floor(torchT/30)%2===0)
     centerText('— KLIK / ENTER UNTUK MULAI —', 196, 11, '#ffffff', '#000');
-  centerText('8 ninja · 2 jurus unik tiap ninja · AI super cerdas', 232, 9, '#6a6a8a');
+  centerText('12 ninja · 2 jurus unik tiap ninja · AI super cerdas', 232, 9, '#6a6a8a');
   const hof = hofTop();
   if(hof) centerText('👑 HALL OF FAME: '+hof.c.name+' ×'+hof.w, 244, 9, '#ffd94d');
   const sv = survBestGet(false), sq = survBestGet(true);
@@ -1997,8 +2029,8 @@ function drawModeSelect(){
   });
 }
 function draftCardXY(i){
-  const row=i<4?0:1, col=i%4;
-  return { bx:52+col*100, by:row?206:108 };
+  const row=i<6?0:1, col=i%6;
+  return { bx:40+col*80, by:row?206:108 };
 }
 function drawDraft(){
   drawBackground();
@@ -2032,7 +2064,7 @@ function drawDraft(){
     }
   }
   ctx.font='8px monospace'; ctx.fillStyle='#6a6a8a'; ctx.textAlign='center';
-  ctx.fillText('klik kartu untuk pilih/hapus · tombol 1-8 juga bisa', W/2, 262);
+  ctx.fillText('klik kartu untuk pilih/hapus · tombol 1-9, 0, Q, W juga bisa', W/2, 262);
 }
 function drawMatchEnd(){
   drawBackground();
@@ -2189,6 +2221,10 @@ addEventListener('keydown', e=>{
     if(mode==='modeselect' && n<=MODE_DEFS.length){ chooseMode(MODE_DEFS[n-1].id); return; }
     if(mode==='draft' && n<=CHARS.length){ toggleDraft(n-1); return; }
     if(mode==='fight'||mode==='roundend'){ speed = n<=2?n:4; return; }
+  }
+  if(mode==='draft'){
+    const extra={'9':8,'0':9,'q':10,'Q':10,'w':11,'W':11};
+    if(k in extra && extra[k]<CHARS.length){ toggleDraft(extra[k]); return; }
   }
   if(k==='r'||k==='R'){ if(G && (mode==='fight'||mode==='roundend')) startRound(); return; }
   if(k==='l'||k==='L'){ if(G && (mode==='fight'||mode==='roundend')){ cam.lock=!cam.lock; SFX.select(); } return; }
