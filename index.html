@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>SHINOBI SENKI 8-BIT — AI Battle Arena</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
@@ -44,6 +47,20 @@
 </div>
 <script>
 'use strict';
+// auto-update: cek versi server, reload bila beda (hanya saat online via http)
+const GAME_VERSION = '1.4.0';
+(function(){
+  if(!/^https?:/.test(location.protocol)) return;
+  const cur = new URLSearchParams(location.search).get('v');
+  fetch('version.txt?t='+Date.now(), {cache:'no-store'})
+    .then(r=>r.ok?r.text():null)
+    .then(t=>{
+      const srv=(t||'').trim();
+      if(srv && srv!==GAME_VERSION && cur!==srv){
+        location.replace(location.pathname+'?v='+encodeURIComponent(srv));
+      }
+    }).catch(()=>{});
+})();
 /* ============================================================
    SHINOBI SENKI 8-BIT — AI Battle Arena
    Mode: Duel 1v1 · Team 3v3 (simultan) · Deathmatch FFA
