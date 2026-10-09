@@ -42,13 +42,13 @@
 <div class="sub">AI BATTLE ARENA — DUEL · TEAM · DEATHMATCH · TOURNAMENT</div>
 <div id="wrap"><canvas id="game" width="480" height="270"></canvas></div>
 <div id="hint">
-  <b>Klik</b> untuk mulai · <b>1/2/3</b> kecepatan · <b>Spasi</b> jeda · <b>L</b> kunci kamera · <b>R</b> rematch · <b>Esc</b> menu<br>
+  <b>Klik</b> untuk mulai · <b>1/2/3</b> kecepatan · <b>Spasi</b> jeda · <b>L</b> kunci kamera · <b>G</b> goyang layar · <b>R</b> rematch · <b>Esc</b> menu<br>
   Semua petarung dikendalikan AI super cerdas — duduk manis dan tonton ~
 </div>
 <script>
 'use strict';
 // auto-update: cek versi server, reload bila beda (hanya saat online via http)
-const GAME_VERSION = '1.4.0';
+const GAME_VERSION = '1.4.1';
 (function(){
   if(!/^https?:/.test(location.protocol)) return;
   const cur = new URLSearchParams(location.search).get('v');
@@ -1510,6 +1510,7 @@ let selMode = 0;
 let speed = 1, paused = false;
 let menuSpeed = 1; // pengaturan kecepatan di menu awal (1/2/4)
 let menuFx = 0; // 0=RINGAN (default, tanpa percikan/animasi), 1=PENUH
+let shakeOn = false; // goyang layar: default MATI biar enak ditonton
 // Tingkat kecerdasan AI: 0=GAMPANG .. 4=EXTREM
 const AI_LEVELS=[
   {name:'GAMPANG', react:14, skill:0.3, mistake:0.18},
@@ -2525,6 +2526,7 @@ addEventListener('keydown', e=>{
   }
   if(k==='r'||k==='R'){ if(G && (mode==='fight'||mode==='roundend')) startRound(); return; }
   if(k==='l'||k==='L'){ if(G && (mode==='fight'||mode==='roundend')){ cam.lock=!cam.lock; SFX.select(); } return; }
+  if(k==='g'||k==='G'){ shakeOn=!shakeOn; SFX.select(); comment(shakeOn?'Goyang layar: ON':'Goyang layar: OFF'); return; }
   // geser kamera manual saat unlock (PC: panah kiri/kanan)
   if((k==='ArrowLeft'||k==='ArrowRight') && G && !cam.lock && (mode==='fight'||mode==='roundend')){
     cam.tx = clamp(cam.tx + (k==='ArrowLeft'?-40:40), 0, WORLD_W-W);
@@ -2714,7 +2716,7 @@ function frame(t){
   if(lastFrameT && t-lastFrameT < 16.6) return;
   lastFrameT = t;
   ctx.save();
-  if(shake>0.5) ctx.translate(rnd(-shake,shake)*0.5, rnd(-shake,shake)*0.5);
+  if(shakeOn && shake>0.5) ctx.translate(rnd(-shake,shake)*0.5, rnd(-shake,shake)*0.5);
 
   if(mode==='title') drawTitle();
   else if(mode==='modeselect') drawModeSelect();
