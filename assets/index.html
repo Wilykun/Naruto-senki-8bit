@@ -48,7 +48,7 @@
 <script>
 'use strict';
 // auto-update: cek versi server, reload bila beda (hanya saat online via http)
-const GAME_VERSION = '1.4.2';
+const GAME_VERSION = '1.4.3';
 (function(){
   if(!/^https?:/.test(location.protocol)) return;
   const cur = new URLSearchParams(location.search).get('v');
@@ -1555,6 +1555,8 @@ function newMatch(gameMode, picks){
     G.respawnSec = teamSetup.respawn || 0;
     G.timeLimitSec = (teamSetup.timeLimit || 0)*60;
     G.timeLeft = G.timeLimitSec*60;
+    // timer pakai batas waktu custom
+    if(G.timeLimitSec>0) G.timer = G.timeLimitSec*60;
     G.teams = [[],[]];
     for(let i=0;i<sz;i++){
       const xa = 120+i*110, xb = WORLD_W-120-i*110;
@@ -1669,6 +1671,8 @@ function decideTimeout(){
     else if(a.hp>b.hp) endRound(a.def.name+' MENANG (WAKTU)!', 0, a);
     else endRound(b.def.name+' MENANG (WAKTU)!', 1, b);
   } else if(G.mode==='team'){
+    // waktu custom: pemenang = kill terbanyak
+    if(G.timeLimitSec>0){ decideTimeUp(); return; }
     const hpA = G.teams[0].reduce((s,f)=>s+Math.max(0,f.hp),0);
     const hpB = G.teams[1].reduce((s,f)=>s+Math.max(0,f.hp),0);
     if(hpA===hpB){ endRound('DRAW!', -1); }
@@ -1733,7 +1737,10 @@ function startRound(){
     G.fighters.forEach((f,i)=>{ f.reset(xs[i%xs.length], i<2?1:-1); f.onStage=true; });
   }
   cam.x=0; cam.tx=0; cam.lock=true;
-  G.timer=60*60; G.frame=0; G.phase='intro'; G.phaseT=110;
+  // timer: team deathmatch pakai batas waktu custom, mode lain 60 detik
+  if(G.mode==='team' && G.timeLimitSec>0) G.timer=G.timeLimitSec*60;
+  else G.timer=60*60;
+  G.frame=0; G.phase='intro'; G.phaseT=110;
   G.flavorT=rndi(700,1100);
   G.suddenDeath=false; G.lastDmgFrame=0;
   mode='fight'; SFX.round();
@@ -1753,7 +1760,7 @@ function updateFight(){
   if(G.phase!=='fight') return;
   G.frame++;
   if(--G.timer<=0){ decideTimeout(); return; }
-  if(G.frame>5400){ decideTimeout(); return; } // failsafe anti-stall
+  if(G.frame>5400 && !(G.mode==='team' && G.timeLimitSec>0)){ decideTimeout(); return; } // failsafe anti-stall (skip jika team pakai waktu custom)
   // SUDDEN DEATH: 30 detik tanpa damage -> semua kena damage berkala
   if(!G.suddenDeath && G.frame-(G.lastDmgFrame||0)>1800){
     G.suddenDeath=true;
@@ -1780,11 +1787,6 @@ function updateFight(){
         }
       }
     }
-  }
-  // BATAS WAKTU: cek time limit
-  if(G.timeLimitSec>0){
-    G.timeLeft--;
-    if(G.timeLeft<=0){ decideTimeUp(); return; }
   }
   for(let s=0;s<speed;s++){
     if(G.ultFreeze){
@@ -2134,7 +2136,10 @@ function centerText(text, y, size, color, shadow){
 function drawTimerAndRound(){
   ctx.textAlign='center'; ctx.fillStyle='#fff';
   ctx.font='bold 16px monospace';
-  ctx.fillText(Math.ceil(G.timer/60), W/2, 24);
+  // format MM:SS untuk waktu custom
+  const tSec=Math.ceil(G.timer/60);
+  const tStr = (G.mode==='team' && G.timeLimitSec>0) ? Math.floor(tSec/60)+':'+String(tSec%60).padStart(2,'0') : ''+tSec;
+  ctx.fillText(tStr, W/2, 24);
   ctx.font='9px monospace'; ctx.fillStyle='#8a8aa8';
   let ml = G.mode==='duel'?'DUEL':G.mode==='team'?'TEAM DEATHMATCH':G.mode==='ffa'?'DEATHMATCH':G.mode==='survival'?'SURVIVAL':'BOSS';
   if(G.tourney && !G.tourneyDone) ml = tourneyStageName();
